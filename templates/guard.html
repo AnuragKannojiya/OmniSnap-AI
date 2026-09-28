@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Screen Guard — OmniSnap AI{% endblock %}
+
+{% block content %}
+<div class="glass-container" style="padding: 20px; height: calc(100vh - 80px); display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+    
+    <!-- Left: Vision / Webcam Area -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="glass-card" style="padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            
+            <div style="position: relative; width: 640px; height: 480px; background: #000; border-radius: 8px; overflow: hidden; margin-bottom: 20px; border: 2px solid rgba(255,255,255,0.1);">
+                <video id="guard-video" width="640" height="480" autoplay playsinline style="display: none;"></video>
+                <canvas id="guard-canvas" width="640" height="480" style="position: absolute; top: 0; left: 0;"></canvas>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <button id="webcam-btn" class="glass-btn" style="padding: 10px 20px; background: rgba(50,150,255,0.2); border: 1px solid rgba(50,150,255,0.5); color: white; border-radius: 8px; cursor: pointer;">Start Webcam</button>
+                <button class="glass-btn" onclick="document.getElementById('img-upload').click()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; border-radius: 8px; cursor: pointer;">Upload Image</button>
+                <input type="file" id="img-upload" accept="image/*" style="display: none;">
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 0.9em; color: rgba(255,255,255,0.6); display: flex; gap: 20px;">
+                <span>FPS: <strong id="fps-stat">0</strong></span>
+                <span>Latency: <strong id="latency-stat">0ms</strong></span>
+                <span>Objects: <strong id="obj-stat">0</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Privacy Status -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="glass-card" style="padding: 30px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+            <h3 style="margin-top: 0;">Privacy Status</h3>
+            <div id="privacy-status" style="font-size: 2.5em; font-weight: bold; color: #4ade80; margin: 20px 0; text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);">SAFE</div>
+            <p style="font-size: 0.9em; color: rgba(255,255,255,0.7); margin-bottom: 0;">Monitoring environment...</p>
+        </div>
+
+        <div class="glass-card" style="padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); flex: 1;">
+            <h3 style="margin-top: 0;">Detections</h3>
+            <ul id="detection-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                <li style="color: rgba(255,255,255,0.5); font-style: italic;">No objects detected</li>
+            </ul>
+
+            <h3 style="margin-top: 0;">Recommendations</h3>
+            <ul id="recommendations" style="padding-left: 20px; margin: 0; color: #fbbf24; font-size: 0.9em; line-height: 1.5;">
+                <li>Keep screen facing away from windows</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const webcamBtn = document.getElementById('webcam-btn');
+    const video = document.getElementById('guard-video');
+    const canvas = document.getElementById('guard-canvas');
+    const ctx = canvas.getContext('2d');
+    const imgUpload = document.getElementById('img-upload');
+    const privacyStatus = document.getElementById('privacy-status');
+    const detectionList = document.getElementById('detection-list');
+    const recsList = document.getElementById('recommendations');
+    
+    let isWebcamOn = false;
+    let detectionInterval = null;
+
+    webcamBtn.addEventListener('click', async () => {
+        if(!isWebcamOn) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                video.play();
+                isWebcamOn = true;
+                webcamBtn.textContent = 'Stop Webcam';
+                webcamBtn.style.background = 'rgba(255,50,50,0.2)';
+                webcamBtn.style.border = '1px solid rgba(255,50,50,0.5)';
+                
+                detectionInterval = setInterval(processFrame, 500); // 2 fps for demo
+            } catch(e) {
+                alert('Webcam access denied or unavailable.');
+            }
+        } else {
+            const stream = video.srcObject;
+            if(stream) stream.getTracks().forEach(t => t.stop());
+            video.style.display = 'none';
+            isWebcamOn = false;
+            webcamBtn.textContent = 'Start Webcam';
+            webcamBtn.style.background = 'rgba(50,150,255,0.2)';
+            webcamBtn.style.border = '1px solid rgba(50,150,255,0.5)';
+            clearInterval(detectionInterval);
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            updateStatus('SAFE', []);
+        }
+    });
+
+    imgUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const img = new Image();
+        img.onload = () => {
+            if(isWebcamOn) webcamBtn.click(); // stop webcam
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            processCanvas();
+        };
+        img.src = URL.createObjectURL(file);
+    });
+
+    async function processFrame() {
+        if(!isWebcamOn) return;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        await processCanvas();
+    }
+
+    async function processCanvas() {
+        const t0 = performance.now();
+        canvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob, 'frame.jpg');
+            try {
+                const res = await fetch('/api/detect', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                document.getElementById('latency-stat').textContent = `${Math.round(performance.now() - t0)}ms`;
+                document.getElementById('fps-stat').textContent = (1000 / (performance.now() - t0)).toFixed(1);
+                
+                drawDetections(data.detections || []);
+                updateStatus(data.status || 'SAFE', data.detections || []);
+                
+            } catch(e) {
+                console.error(e);
+            }
+        }, 'image/jpeg');
+    }
+
+    function drawDetections(dets) {
+        // Assume ctx already has the image/video drawn
+        dets.forEach(d => {
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3;
+            // Dummy coords if API doesn't provide valid ones
+            const box = d.box || [100, 100, 200, 200];
+            ctx.strokeRect(box[0], box[1], box[2]-box[0], box[3]-box[1]);
+            
+            ctx.fillStyle = '#ef4444';
+            ctx.font = '16px Arial';
+            ctx.fillText(`${d.label} ${(d.confidence*100).toFixed(0)}%`, box[0], box[1] - 5);
+        });
+        document.getElementById('obj-stat').textContent = dets.length;
+    }
+
+    function updateStatus(status, dets) {
+        if(status === 'DANGER' || dets.some(d => d.label === 'person' && d.confidence > 0.6 && dets.length > 1)) {
+            privacyStatus.textContent = 'DANGER';
+            privacyStatus.style.color = '#ef4444';
+            privacyStatus.style.textShadow = '0 0 10px rgba(239, 68, 68, 0.5)';
+            recsList.innerHTML = '<li>Multiple people detected. Lock screen!</li>';
+        } else if(status === 'CAUTION' || dets.some(d => d.label === 'cell phone')) {
+            privacyStatus.textContent = 'CAUTION';
+            privacyStatus.style.color = '#fbbf24';
+            privacyStatus.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.5)';
+            recsList.innerHTML = '<li>Phone detected. Potential recording risk.</li>';
+        } else {
+            privacyStatus.textContent = 'SAFE';
+            privacyStatus.style.color = '#4ade80';
+            privacyStatus.style.textShadow = '0 0 10px rgba(74, 222, 128, 0.5)';
+            recsList.innerHTML = '<li>Environment looks secure.</li>';
+        }
+
+        if(dets.length === 0) {
+            detectionList.innerHTML = '<li style="color: rgba(255,255,255,0.5); font-style: italic;">No objects detected</li>';
+        } else {
+            detectionList.innerHTML = dets.map(d => `
+                <li style="padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 6px; display: flex; justify-content: space-between;">
+                    <span style="text-transform: capitalize;">${d.label}</span>
+                    <span style="color: #60a5fa;">${(d.confidence*100).toFixed(0)}%</span>
+                </li>
+            `).join('');
+        }
+    }
+</script>
+{% endblock %}

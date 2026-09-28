@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Document RAG — OmniSnap AI{% endblock %}
+
+{% block content %}
+<div class="glass-container" style="padding: 20px; height: calc(100vh - 80px); display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+    
+    <!-- Left Column: Upload and Indexed Docs -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="glass-card" style="padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin-top: 0;">Upload Documents</h3>
+            <div id="upload-zone" class="upload-zone" style="border: 2px dashed rgba(255,255,255,0.3); border-radius: 10px; padding: 40px 20px; text-align: center; cursor: pointer; transition: background 0.3s ease;">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px; color: rgba(255,255,255,0.7);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <div style="color: rgba(255,255,255,0.8);">Drag & drop files here or click to browse</div>
+                <div style="font-size: 0.8em; color: rgba(255,255,255,0.5); margin-top: 5px;">Supports PDF, TXT, MD, DOCX</div>
+                <input type="file" id="rag-file-input" multiple accept=".pdf,.txt,.md,.docx" style="display: none;">
+            </div>
+            <div id="upload-status" style="margin-top: 10px; font-size: 0.9em; color: #4ade80; display: none;">Upload complete!</div>
+        </div>
+
+        <div class="glass-card" style="padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); flex: 1; overflow-y: auto;">
+            <h3 style="margin-top: 0;">Indexed Documents</h3>
+            <ul id="doc-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;">
+                <li style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; font-size: 0.9em; display: flex; justify-content: space-between;">
+                    <span>example_manual.pdf</span>
+                    <span style="color: rgba(255,255,255,0.5);">42 chunks</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Right Column: Search & Results -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="glass-card" style="padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="rag-search" class="glass-input" placeholder="Ask a question about your documents..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;">
+                <button id="rag-search-btn" class="glass-btn" style="padding: 10px 25px; border-radius: 8px; cursor: pointer; background: rgba(50, 150, 255, 0.3); color: white; border: 1px solid rgba(50,150,255,0.5);">Search</button>
+            </div>
+        </div>
+
+        <div class="glass-card" style="padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); flex: 1; overflow-y: auto;">
+            <h3 style="margin-top: 0;">Search Results</h3>
+            <div id="rag-results" style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="color: rgba(255,255,255,0.5); font-style: italic;">Enter a query to search through documents.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('rag-file-input');
+    const uploadStatus = document.getElementById('upload-status');
+    const docList = document.getElementById('doc-list');
+    const searchInput = document.getElementById('rag-search');
+    const searchBtn = document.getElementById('rag-search-btn');
+    const resultsContainer = document.getElementById('rag-results');
+
+    // Drag & Drop
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.style.background = 'rgba(255,255,255,0.1)';
+    });
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.style.background = 'transparent';
+    });
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.style.background = 'transparent';
+        if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+    });
+    uploadZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+        if(fileInput.files.length) handleFiles(fileInput.files);
+    });
+
+    async function handleFiles(files) {
+        uploadStatus.style.display = 'block';
+        uploadStatus.textContent = 'Uploading...';
+        
+        const formData = new FormData();
+        for(let i=0; i<files.length; i++) {
+            formData.append('files', files[i]);
+            // Optimistic UI
+            const li = document.createElement('li');
+            li.style.cssText = 'padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; font-size: 0.9em; display: flex; justify-content: space-between;';
+            li.innerHTML = `<span>${files[i].name}</span><span style="color: rgba(255,255,255,0.5);">Processing...</span>`;
+            docList.appendChild(li);
+        }
+
+        try {
+            const res = await fetch('/api/rag/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            uploadStatus.textContent = data.message || 'Upload complete!';
+            setTimeout(() => uploadStatus.style.display = 'none', 3000);
+        } catch(err) {
+            uploadStatus.style.color = '#ef4444';
+            uploadStatus.textContent = 'Error uploading files.';
+        }
+    }
+
+    searchBtn.addEventListener('click', async () => {
+        const query = searchInput.value.trim();
+        if(!query) return;
+
+        resultsContainer.innerHTML = '<em>Searching...</em>';
+        try {
+            const res = await fetch('/api/rag/search', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ query: query, top_k: 5 })
+            });
+            const data = await res.json();
+            
+            if(!data.results || data.results.length === 0) {
+                resultsContainer.innerHTML = '<em>No relevant documents found.</em>';
+                return;
+            }
+
+            resultsContainer.innerHTML = '';
+            data.results.forEach(item => {
+                const card = document.createElement('div');
+                card.style.cssText = 'padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border-left: 4px solid #3b82f6;';
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9em;">
+                        <strong>${item.source || 'Unknown'}</strong>
+                        <span style="color: #4ade80;">Score: ${(item.score || 0.9).toFixed(2)}</span>
+                    </div>
+                    <div style="font-size: 0.95em; line-height: 1.5;">${item.content || '...'}</div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+        } catch(e) {
+            resultsContainer.innerHTML = '<em style="color: #ef4444;">Search failed.</em>';
+        }
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') searchBtn.click();
+    });
+</script>
+{% endblock %}

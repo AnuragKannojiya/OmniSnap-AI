@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Scribe — OmniSnap AI{% endblock %}
+
+{% block content %}
+<div class="glass-container" style="padding: 20px; display: flex; flex-direction: column; gap: 20px; height: calc(100vh - 80px);">
+    
+    <!-- Controls Area -->
+    <div style="display: flex; justify-content: center; align-items: center; gap: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+        <button id="record-btn" class="glass-btn" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 50, 50, 0.2); border: 2px solid rgba(255, 50, 50, 0.8); color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.3s ease;">
+            <div style="width: 30px; height: 30px; background: #ff3333; border-radius: 50%;"></div>
+        </button>
+        
+        <div id="visualizer" class="visualizer-container" style="display: flex; gap: 4px; height: 60px; align-items: center; width: 200px;">
+            <!-- Bars injected by JS -->
+        </div>
+
+        <div id="meeting-timer" style="font-size: 2em; font-family: monospace; color: white;">00:00:00</div>
+    </div>
+
+    <!-- Upload and Actions -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <input type="file" id="audio-upload" accept=".wav,.mp3,.m4a" style="display: none;">
+            <button class="glass-btn" onclick="document.getElementById('audio-upload').click()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">Upload Audio</button>
+            <button id="summarize-btn" class="glass-btn" style="padding: 10px 20px; background: rgba(50,150,255,0.2); color: white; border: 1px solid rgba(50,150,255,0.5); border-radius: 8px; cursor: pointer; margin-left: 10px;">Summarize & Extract Actions</button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="glass-btn" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">Export TXT</button>
+            <button class="glass-btn" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">Export PDF</button>
+        </div>
+    </div>
+
+    <!-- 2-Column Transcripts & Actions -->
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; flex: 1; min-height: 0;">
+        <div class="glass-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0;">Live Transcription</h3>
+            <div id="transcription-feed" style="flex: 1; overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 10px; font-family: sans-serif; line-height: 1.5; color: #ddd;">
+                <!-- Transcripts -->
+            </div>
+        </div>
+
+        <div class="glass-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0;">Action Items</h3>
+            <div id="action-items" style="flex: 1; overflow-y: auto; color: #eee;">
+                <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
+                    <li><i>Waiting for transcript...</i></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0.7); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 50, 50, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0); }
+    }
+    .recording {
+        animation: pulse 1.5s infinite;
+    }
+    .visualizer-bar {
+        width: 6px;
+        background: #4ade80;
+        border-radius: 3px;
+        transition: height 0.1s ease;
+    }
+</style>
+<script>
+    const recordBtn = document.getElementById('record-btn');
+    const visualizer = document.getElementById('visualizer');
+    const timerEl = document.getElementById('meeting-timer');
+    const audioUpload = document.getElementById('audio-upload');
+    const transcribeFeed = document.getElementById('transcription-feed');
+    const actionItems = document.getElementById('action-items');
+    const summarizeBtn = document.getElementById('summarize-btn');
+
+    let isRecording = false;
+    let timerInterval = null;
+    let seconds = 0;
+    let visInterval = null;
+
+    // Init visualizer bars
+    for(let i=0; i<20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'visualizer-bar';
+        bar.style.height = '4px';
+        visualizer.appendChild(bar);
+    }
+
+    function formatTime(sec) {
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    recordBtn.addEventListener('click', () => {
+        isRecording = !isRecording;
+        if(isRecording) {
+            recordBtn.classList.add('recording');
+            recordBtn.querySelector('div').style.borderRadius = '4px'; // square
+            timerInterval = setInterval(() => {
+                seconds++;
+                timerEl.textContent = formatTime(seconds);
+            }, 1000);
+            
+            const bars = document.querySelectorAll('.visualizer-bar');
+            visInterval = setInterval(() => {
+                bars.forEach(bar => {
+                    bar.style.height = `${Math.random() * 50 + 10}px`;
+                });
+            }, 100);
+        } else {
+            recordBtn.classList.remove('recording');
+            recordBtn.querySelector('div').style.borderRadius = '50%'; // circle
+            clearInterval(timerInterval);
+            clearInterval(visInterval);
+            document.querySelectorAll('.visualizer-bar').forEach(bar => bar.style.height = '4px');
+        }
+    });
+
+    audioUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const msg = document.createElement('div');
+        msg.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - <em>Uploading ${file.name}...</em>`;
+        transcribeFeed.appendChild(msg);
+
+        try {
+            const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+            const data = await res.json();
+            msg.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${data.text || "Transcription completed."}`;
+        } catch(err) {
+            msg.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - <em>Error during transcription.</em>`;
+        }
+    });
+
+    summarizeBtn.addEventListener('click', async () => {
+        actionItems.innerHTML = "<em>Extracting actions...</em>";
+        try {
+            const res = await fetch('/api/summarize', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ text: transcribeFeed.innerText })
+            });
+            const data = await res.json();
+            actionItems.innerHTML = `<ul style="padding-left: 20px; margin: 0; line-height: 1.6;">${(data.actions || ['Discussed topics']).map(a => `<li>${a}</li>`).join('')}</ul>`;
+        } catch(e) {
+            actionItems.innerHTML = "<em>Error extracting actions.</em>";
+        }
+    });
+
+</script>
+{% endblock %}

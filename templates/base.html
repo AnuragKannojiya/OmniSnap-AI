@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OmniSnap AI{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="bg-particles" id="particles"></div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="brand">
+            <div class="brand-logo">⚡</div>
+            <h1 class="neon-text">OmniSnap AI</h1>
+            <p class="brand-subtitle">Zero-Cloud Multimodal Copilot</p>
+            <div class="brand-badge">
+                <span class="badge-dot"></span>
+                <span>Powered by Hexagon NPU</span>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="/copilot" class="nav-link {% if request.url.path == '/copilot' %}active{% endif %}">
+                <span class="nav-icon">💬</span>
+                <span>Copilot</span>
+            </a>
+            <a href="/meeting" class="nav-link {% if request.url.path == '/meeting' %}active{% endif %}">
+                <span class="nav-icon">🎙️</span>
+                <span>Meeting Scribe</span>
+            </a>
+            <a href="/rag" class="nav-link {% if request.url.path == '/rag' %}active{% endif %}">
+                <span class="nav-icon">📚</span>
+                <span>Document RAG</span>
+            </a>
+            <a href="/guard" class="nav-link {% if request.url.path == '/guard' %}active{% endif %}">
+                <span class="nav-icon">👁️</span>
+                <span>Screen Guard</span>
+            </a>
+            <a href="/benchmarks" class="nav-link {% if request.url.path == '/benchmarks' %}active{% endif %}">
+                <span class="nav-icon">📈</span>
+                <span>Benchmarks</span>
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <div class="qualcomm-badge">
+                <div class="qualcomm-text">Qualcomm® Snapdragon®</div>
+                <div class="qualcomm-sub">X Elite • 45 TOPS NPU</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
