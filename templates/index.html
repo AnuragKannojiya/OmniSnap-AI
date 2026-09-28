@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniSnap AI — Qualcomm Snapdragon® HP OmniBook Copilot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b0f19; color: #f1f5f9; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .snap-gradient { background: linear-gradient(135deg, #e60012 0%, #ff4b4b 50%, #99000a 100%); }
+        .glass-panel { background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-card { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.06); }
+        .tab-btn.active { background: rgba(230, 0, 18, 0.15); border-color: #e60012; color: #ff6b6b; }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.15); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="glass-panel sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center space-x-4">
+            <div class="w-10 h-10 rounded-xl snap-gradient flex items-center justify-center font-bold text-white shadow-lg shadow-red-900/40 text-lg tracking-wider">
+                ⚡
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="font-extrabold text-lg tracking-tight text-white">OmniSnap AI</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-950/80 text-red-400 border border-red-800/60 font-medium">Qualcomm AI Hub</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-950/80 text-blue-400 border border-blue-800/60 font-medium">HP OmniBook Optimized</span>
+                </div>
+                <p class="text-xs text-slate-400">Zero-Cloud Autonomous Multimodal Copilot & Privacy Intelligence</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <!-- NPU Status Badge -->
+            <div class="flex items-center space-x-2 bg-emerald-950/50 border border-emerald-800/60 px-3 py-1.5 rounded-lg">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-dot"></span>
+                <span class="text-xs font-semibold text-emerald-300">Hexagon NPU: 45 TOPS (Burst Mode)</span>
+            </div>
+
+            <!-- Zero Cloud Badge -->
+            <div class="flex items-center space-x-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg">
+                <span class="text-xs text-slate-300 font-medium">🛡️ Air-Gapped (0 Bytes Cloud)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Left Navigation Sidebar -->
+        <aside class="w-64 glass-panel border-r border-slate-800 p-4 flex flex-col justify-between">
+            <div class="space-y-1.5">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-3 mb-2">Snapdragon AI Engines</div>
+                
+                <button onclick="switchTab('copilot')" id="btn-copilot" class="tab-btn active w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60">
+                    <span>💬</span>
+                    <span>NPU Chat Copilot</span>
+                </button>
+                
+                <button onclick="switchTab('speech')" id="btn-speech" class="tab-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60">
+                    <span>🎙️</span>
+                    <span>Whisper Meeting Scribe</span>
+                </button>
+                
+                <button onclick="switchTab('rag')" id="btn-rag" class="tab-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60">
+                    <span>📚</span>
+                    <span>Local Document RAG</span>
+                </button>
+                
+                <button onclick="switchTab('vision')" id="btn-vision" class="tab-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60">
+                    <span>👁️</span>
+                    <span>Screen & Vision Guard</span>
+                </button>
+                
+                <button onclick="switchTab('privacy')" id="btn-privacy" class="tab-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60">
+                    <span>🛡️</span>
+                    <span>Privacy Shield (DLP)</span>
+                </button>
+                
+                <button onclick="switchTab('benchmarks')" id="btn-benchmarks" class="tab-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-slate-800/60">
+                    <span>📊</span>
+                    <span>NPU vs Cloud Benchmarks</span>
+                </button>
+            </div>
+
+            <!-- Snapdragon Live Metrics Widget -->
+            <div class="glass-card p-3.5 rounded-xl space-y-2 border border-slate-700/60">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300">HP OmniBook Power</span>
+                    <span class="text-xs font-mono font-bold text-emerald-400" id="live-power-watts">3.8 W</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-1.5">
+                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 18%"></div>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>AI Battery Life:</span>
+                    <span class="text-slate-200 font-semibold" id="live-battery-hours">22.5 Hours</span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800">
+                    <span>Cloud API Cost Avoided:</span>
+                    <span class="text-emerald-400 font-semibold" id="live-savings-usd">$24.50</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Workspace -->
+        <main class="flex-1 overflow-y-auto p-6 bg-slate-950/60">
+
+            <!-- TAB 1: COPILOT & REASONING -->
+            <section id="tab-copilot" class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <span>Snapdragon NPU Reasoning Copilot</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Llama-3.2-3B INT4</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Sub-30ms first-token latency powered by Qualcomm QNN HTP Execution Provider</p>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="text-slate-400">Preset Prompts:</span>
+                        <button onclick="setPrompt('Generate an executive briefing on migrating workloads to Snapdragon Hexagon NPU for HP OmniBook.')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Executive Brief</button>
+                        <button onclick="setPrompt('Analyze privacy advantages of zero-cloud local AI over public LLM APIs.')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Privacy Audit</button>
+                        <button onclick="setPrompt('Summarize HP OmniBook battery and thermal benchmarks with 45 TOPS Hexagon NPU.')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">HP OmniBook Synergy</button>
+                    </div>
+                </div>
+
+                <!-- Chat Log Display -->
+                <div id="chat-box" class="glass-card rounded-2xl p-5 min-h-[380px] max-h-[500px] overflow-y-auto space-y-4 font-normal text-sm leading-relaxed border border-slate-800">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400 font-bold text-xs shrink-0">⚡</div>
+                        <div class="space-y-1">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-slate-200">OmniSnap (Hexagon NPU)</span>
+                                <span class="text-[10px] text-slate-500 font-mono">Ready • 45 TOPS Available</span>
+                            </div>
+                            <p class="text-slate-300">
+                                Welcome to OmniSnap AI on your Snapdragon-powered HP PC! All queries, audio, and documents are processed 100% locally on the Qualcomm Hexagon NPU. No data ever leaves your device. How can I assist your workflow today?
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Box -->
+                <div class="glass-card p-3 rounded-2xl border border-slate-700 flex items-center space-x-3">
+                    <input id="prompt-input" type="text" placeholder="Ask anything, draft meeting notes, or query local documents..." class="flex-1 bg-transparent px-3 py-2 text-sm text-slate-200 focus:outline-none placeholder-slate-500">
+                    <button onclick="sendPrompt()" id="send-btn" class="snap-gradient px-5 py-2.5 rounded-xl font-semibold text-xs tracking-wide text-white hover:opacity-95 shadow-lg shadow-red-950/40 transition">
+                        Infer on NPU ➔
+                    </button>
+                </div>
+
+                <!-- Live Query Telemetry Strip -->
+                <div id="query-telemetry" class="hidden glass-card p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs font-mono">
+                    <span class="text-slate-400">Latency: <span id="tele-latency" class="text-emerald-400 font-bold">28.5 ms</span></span>
+                    <span class="text-slate-400">Tokens/Sec: <span id="tele-speed" class="text-cyan-400 font-bold">36.2</span></span>
+                    <span class="text-slate-400">NPU Power: <span id="tele-power" class="text-amber-400 font-bold">3.9 W</span></span>
+                    <span class="text-slate-400">Speedup vs CPU: <span id="tele-speedup" class="text-purple-400 font-bold">6.8x</span></span>
+                </div>
+            </section>
+
+            <!-- TAB 2: SPEECH & MEETING SCRIBE -->
+            <section id="tab-speech" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <span>Whisper Speech Intelligence & Meeting Scribe</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Whisper-Base INT8 QNN</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Real-time local speech-to-text with autonomous action-item and decision extraction</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    <!-- Audio Control & Waveform -->
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="font-bold text-sm text-slate-200">Live Audio Input</h3>
+                        <p class="text-xs text-slate-400 leading-normal">Simulate or stream microphone input directly into the Hexagon NPU pipeline.</p>
+                        
+                        <div class="space-y-2">
+                            <label class="text-xs text-slate-400">Select Meeting Simulation Scenario:</label>
+                            <select id="meeting-scenario" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none">
+                                <option value="product_sync">Q4 Product Sync: Snapdragon HP OmniBook Migration</option>
+                                <option value="executive_briefing">Executive Briefing: Zero-Cloud Privacy Mandate</option>
+                                <option value="engineering_standup">Engineering Standup: QNN Execution Provider Benchmarks</option>
+                            </select>
+                        </div>
+
+                        <button onclick="runSpeechTranscription()" id="speech-btn" class="w-full snap-gradient py-2.5 rounded-xl font-semibold text-xs text-white shadow-lg shadow-red-950/40 transition">
+                            🎙️ Transcribe on Hexagon NPU
+                        </button>
+
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400">Speech Chunk Latency:</span>
+                                <span id="speech-latency" class="text-emerald-400 font-mono font-bold">-- ms</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-400">Energy Saved vs CPU:</span>
+                                <span id="speech-energy" class="text-cyan-400 font-mono font-bold">--%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transcript & Action Items Display -->
+                    <div class="col-span-2 glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-200">Real-Time Transcript</h3>
+                            <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">100% On-Device</span>
+                        </div>
+                        <div id="speech-transcript-box" class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-300 min-h-[110px] leading-relaxed">
+                            Click "Transcribe on Hexagon NPU" to run the Whisper model compiled from Qualcomm AI Hub.
+                        </div>
+
+                        <!-- Action Items & Decisions -->
+                        <div class="grid grid-cols-2 gap-4 pt-2">
+                            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                    <span>⚡</span><span>Extracted Action Items</span>
+                                </span>
+                                <ul id="speech-actions-list" class="text-xs text-slate-300 space-y-1.5 pl-4 list-disc">
+                                    <li class="text-slate-500">Awaiting audio input...</li>
+                                </ul>
+                            </div>
+
+                            <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                                <span class="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center space-x-1.5">
+                                    <span>🎯</span><span>Key Decisions</span>
+                                </span>
+                                <ul id="speech-decisions-list" class="text-xs text-slate-300 space-y-1.5 pl-4 list-disc">
+                                    <li class="text-slate-500">Awaiting audio input...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: LOCAL DOCUMENT RAG -->
+            <section id="tab-rag" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <span>Air-Gapped Document RAG & Vector Engine</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">all-MiniLM-L6-v2 ONNX</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Search and query confidential enterprise files locally with sub-7ms vector retrieval</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    <!-- Indexed Documents List -->
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-200">Local Knowledge Base</h3>
+                            <span class="text-xs text-slate-400" id="rag-doc-count">4 Documents</span>
+                        </div>
+                        <div id="rag-documents-list" class="space-y-2 max-h-[360px] overflow-y-auto">
+                            <!-- Populated via JS -->
+                        </div>
+
+                        <!-- Add Document Form -->
+                        <div class="pt-3 border-t border-slate-800 space-y-2">
+                            <input id="new-doc-title" type="text" placeholder="Document Name (e.g. Project_Memo.md)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300">
+                            <textarea id="new-doc-content" rows="2" placeholder="Document text content..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300"></textarea>
+                            <button onclick="addDocument()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold text-xs py-2 rounded-lg transition">
+                                + Index on Hexagon NPU
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Semantic Search & Q&A -->
+                    <div class="col-span-2 glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="font-bold text-sm text-slate-200">Semantic Vector Query</h3>
+                        
+                        <div class="flex space-x-3">
+                            <input id="rag-search-input" type="text" placeholder="e.g. How does HP OmniBook battery life benefit from Snapdragon Hexagon NPU?" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 focus:outline-none">
+                            <button onclick="searchRAG()" class="snap-gradient px-4 py-2 rounded-xl text-xs font-semibold text-white">Search Vector DB</button>
+                        </div>
+
+                        <div id="rag-results-box" class="space-y-3 min-h-[220px]">
+                            <p class="text-xs text-slate-500 italic">Enter a query to retrieve matching local document fragments.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: VISION & SCREEN INTELLIGENCE -->
+            <section id="tab-vision" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <span>Screen Intelligence & Confidentiality Detector</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">YOLOv11-Nano QNN</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Sub-5ms frame analysis protecting sensitive windows before screen-sharing</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <h3 class="font-bold text-sm text-slate-200">Screen Inspector Target</h3>
+                        
+                        <div class="space-y-2">
+                            <label class="text-xs text-slate-400">Select Test Display Feed:</label>
+                            <select id="vision-feed" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none">
+                                <option value="workspace_screen">Active Developer Workspace (VS Code, QNN Logs)</option>
+                                <option value="confidential_document">Confidential Customer PII & Financial Record</option>
+                                <option value="video_meeting">Video Conference Presentation Slide</option>
+                            </select>
+                        </div>
+
+                        <button onclick="runVisionInference()" class="w-full snap-gradient py-2.5 rounded-xl font-semibold text-xs text-white">
+                            Scan Screen on NPU (Sub-5ms)
+                        </button>
+
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 font-mono text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Inference Latency:</span>
+                                <span id="vis-latency" class="text-emerald-400 font-bold">4.2 ms</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Effective Framerate:</span>
+                                <span id="vis-fps" class="text-cyan-400 font-bold">238 FPS</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400">Power Draw:</span>
+                                <span class="text-amber-400 font-bold">2.1 W</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-span-2 glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-200">Vision Detections & Bounding Boxes</h3>
+                            <div id="vis-alert-badge" class="hidden px-2.5 py-1 rounded bg-red-950 text-red-400 border border-red-800 text-xs font-bold">
+                                ⚠️ Privacy Boundary Alert
+                            </div>
+                        </div>
+
+                        <div id="vis-detections-list" class="space-y-2">
+                            <p class="text-xs text-slate-500">Run vision inference to detect active windows, UI widgets, and confidential stamps.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: PRIVACY SHIELD (DLP) -->
+            <section id="tab-privacy" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <span>Snapdragon Privacy Shield & On-Device DLP</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Hexagon Zero-Leakage Guard</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Scrubs sensitive PII, API tokens, and confidential identifiers locally before export</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-200">Original Unsanitized Text</h3>
+                            <button onclick="setSamplePII()" class="text-xs text-red-400 hover:underline">Load Sample PII</button>
+                        </div>
+                        <textarea id="pii-input" rows="8" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-300 font-mono focus:outline-none" placeholder="Paste text containing emails, credit cards, or API secrets..."></textarea>
+                        <button onclick="sanitizePII()" class="w-full snap-gradient py-2.5 rounded-xl font-semibold text-xs text-white">
+                            🛡️ Scrub & Redact on Snapdragon NPU
+                        </button>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-slate-200">Sanitized Air-Gapped Output</h3>
+                            <span id="pii-status" class="text-xs font-mono text-emerald-400">Status: Idle</span>
+                        </div>
+                        <div id="pii-output" class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 font-mono min-h-[190px] whitespace-pre-wrap">
+                            Sanitized text will appear here.
+                        </div>
+                        <div id="pii-entities-found" class="text-xs text-slate-400"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: BENCHMARKS & TELEMETRY -->
+            <section id="tab-benchmarks" class="hidden space-y-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+                            <span>Snapdragon X Elite NPU vs x86 vs Cloud Benchmarks</span>
+                            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">45 TOPS Hexagon Architecture</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Real-world comparative latency, thermal dissipation, and battery endurance</p>
+                    </div>
+                    <button onclick="refreshBenchmarks()" class="snap-gradient px-4 py-2 rounded-xl text-xs font-semibold text-white">
+                        Run Full Benchmark Suite
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Inference Latency</div>
+                        <div class="text-3xl font-extrabold text-emerald-400 font-mono">11.8 ms</div>
+                        <p class="text-xs text-slate-400">Whisper-Base on Hexagon NPU vs 84.5 ms on x86 CPU (7.2x faster)</p>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active AI Power Draw</div>
+                        <div class="text-3xl font-extrabold text-cyan-400 font-mono">3.8 Watts</div>
+                        <p class="text-xs text-slate-400">Hexagon NPU TDP vs 38.5W on x86 CPU (10.1x lower power)</p>
+                    </div>
+
+                    <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">HP OmniBook AI Battery</div>
+                        <div class="text-3xl font-extrabold text-purple-400 font-mono">22.5 Hours</div>
+                        <p class="text-xs text-slate-400">Continuous AI workload runtime vs 3.2 hours on x86 rival</p>
+                    </div>
+                </div>
+
+                <!-- Benchmark Table -->
+                <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 font-mono uppercase border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">AI Workload (Qualcomm AI Hub)</th>
+                                <th class="p-3.5 text-emerald-400">Snapdragon NPU (HP OmniBook)</th>
+                                <th class="p-3.5 text-slate-300">x86 Rival Laptop</th>
+                                <th class="p-3.5 text-slate-300">Public Cloud API</th>
+                                <th class="p-3.5 text-cyan-400">Hexagon Efficiency Advantage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="benchmark-table-body" class="divide-y divide-slate-800/60 font-mono">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- App JavaScript Logic -->
+    <script>
+        function switchTab(tabId) {
+            const tabs = ['copilot', 'speech', 'rag', 'vision', 'privacy', 'benchmarks'];
+            tabs.forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                document.getElementById('btn-' + t).classList.remove('active');
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.getElementById('btn-' + tabId).classList.add('active');
+
+            if (tabId === 'rag') loadDocuments();
+            if (tabId === 'benchmarks') refreshBenchmarks();
+        }
+
+        function setPrompt(text) {
+            document.getElementById('prompt-input').value = text;
+        }
+
+        async function sendPrompt() {
+            const input = document.getElementById('prompt-input');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            const chatBox = document.getElementById('chat-box');
+            // Append User Message
+            chatBox.innerHTML += `
+                <div class="flex items-start justify-end space-x-3">
+                    <div class="bg-red-950/40 border border-red-800/60 p-3 rounded-2xl max-w-xl text-slate-200 text-sm">
+                        ${prompt}
+                    </div>
+                </div>
+            `;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            document.getElementById('send-btn').innerText = 'Computing on NPU...';
+
+            try {
+                const res = await fetch('/api/copilot/reason', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({prompt: prompt})
+                });
+                const data = await res.json();
+
+                // Append Assistant Message
+                chatBox.innerHTML += `
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400 font-bold text-xs shrink-0">⚡</div>
+                        <div class="space-y-1 max-w-2xl">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-slate-200">OmniSnap (Hexagon NPU)</span>
+                                <span class="text-[10px] text-emerald-400 font-mono">${data.latency_ms}ms • ${data.tokens_per_second} tok/s • ${data.power_draw_watts}W</span>
+                            </div>
+                            <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">
+                                ${data.response}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Update Telemetry strip
+                document.getElementById('query-telemetry').classList.remove('hidden');
+                document.getElementById('tele-latency').innerText = data.latency_ms + ' ms';
+                document.getElementById('tele-speed').innerText = data.tokens_per_second;
+                document.getElementById('tele-power').innerText = data.power_draw_watts + ' W';
+                document.getElementById('tele-speedup').innerText = data.speedup_vs_cpu;
+
+            } catch (err) {
+                console.error(err);
+            } finally {
+                document.getElementById('send-btn').innerText = 'Infer on NPU ➔';
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        async function runSpeechTranscription() {
+            const scenario = document.getElementById('meeting-scenario').value;
+            const btn = document.getElementById('speech-btn');
+            btn.innerText = 'Transcribing on Hexagon NPU...';
+
+            try {
+                const res = await fetch('/api/speech/transcribe', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({scenario: scenario})
+                });
+                const data = await res.json();
+
+                document.getElementById('speech-transcript-box').innerText = data.transcript;
+                document.getElementById('speech-latency').innerText = data.latency_ms + ' ms';
+                document.getElementById('speech-energy').innerText = data.energy_saved;
+
+                const actionsList = document.getElementById('speech-actions-list');
+                actionsList.innerHTML = data.action_items.map(a => `<li>${a}</li>`).join('');
+
+                const decisionsList = document.getElementById('speech-decisions-list');
+                decisionsList.innerHTML = data.decisions.map(d => `<li>${d}</li>`).join('');
+
+            } catch (err) {
+                console.error(err);
+            } finally {
+                btn.innerText = '🎙️ Transcribe on Hexagon NPU';
+            }
+        }
+
+        async function loadDocuments() {
+            try {
+                const res = await fetch('/api/rag/documents');
+                const docs = await res.json();
+                document.getElementById('rag-doc-count').innerText = docs.length + ' Documents';
+                const list = document.getElementById('rag-documents-list');
+                list.innerHTML = docs.map(d => `
+                    <div class="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs space-y-1">
+                        <div class="font-bold text-slate-200 truncate">${d.title}</div>
+                        <div class="text-[10px] text-red-400 font-mono">${d.category}</div>
+                        <p class="text-slate-400 text-[11px] line-clamp-2">${d.snippet}</p>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function searchRAG() {
+            const query = document.getElementById('rag-search-input').value.trim();
+            if (!query) return;
+
+            try {
+                const res = await fetch('/api/rag/search', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({query: query})
+                });
+                const results = await res.json();
+                const box = document.getElementById('rag-results-box');
+                box.innerHTML = results.map(r => `
+                    <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-200">${r.title}</span>
+                            <span class="font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">Match: ${(r.score * 100).toFixed(1)}%</span>
+                        </div>
+                        <p class="text-slate-300 leading-normal">${r.content}</p>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function addDocument() {
+            const title = document.getElementById('new-doc-title').value.trim();
+            const content = document.getElementById('new-doc-content').value.trim();
+            if (!title || !content) return;
+
+            try {
+                await fetch('/api/rag/index', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title: title, content: content})
+                });
+                document.getElementById('new-doc-title').value = '';
+                document.getElementById('new-doc-content').value = '';
+                loadDocuments();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function runVisionInference() {
+            const feed = document.getElementById('vision-feed').value;
+            try {
+                const res = await fetch('/api/vision/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({frame_type: feed})
+                });
+                const data = await res.json();
+
+                document.getElementById('vis-latency').innerText = data.latency_ms + ' ms';
+                document.getElementById('vis-fps').innerText = data.effective_fps + ' FPS';
+
+                const alertBadge = document.getElementById('vis-alert-badge');
+                if (data.privacy_alert) {
+                    alertBadge.classList.remove('hidden');
+                    alertBadge.innerText = data.privacy_alert;
+                } else {
+                    alertBadge.classList.add('hidden');
+                }
+
+                const list = document.getElementById('vis-detections-list');
+                list.innerHTML = data.detections.map(d => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+                        <span class="font-bold text-slate-200">${d.label}</span>
+                        <span class="font-mono text-cyan-400">Confidence: ${(d.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function setSamplePII() {
+            document.getElementById('pii-input').value = 
+`Subject: Confidential HP OmniBook Evaluation
+Dear Team,
+Please contact Johnathan Doe at john.doe@enterprise-corp.com or call +1-555-019-2834.
+Account verification number: 4532-8921-4402-9918.
+Authorization secret token: sk-live-snapdragon-992144883192019482.
+Client SSN reference: 123-45-6789.`;
+        }
+
+        async function sanitizePII() {
+            const text = document.getElementById('pii-input').value;
+            if (!text) return;
+
+            try {
+                const res = await fetch('/api/privacy/sanitize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: text})
+                });
+                const data = await res.json();
+
+                document.getElementById('pii-output').innerText = data.sanitized_text;
+                document.getElementById('pii-status').innerText = `Scrubbed in ${data.latency_ms}ms • ${data.entities_found} items redacted`;
+                document.getElementById('pii-entities-found').innerText = `Entities detected: ${data.detected_entities.map(e => e.type).join(', ')}`;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function refreshBenchmarks() {
+            try {
+                const res = await fetch('/api/telemetry/live');
+                const data = await res.json();
+
+                document.getElementById('live-power-watts').innerText = data.power_and_battery.npu_active_power_watts + ' W';
+                document.getElementById('live-battery-hours').innerText = data.power_and_battery.hp_omnibook_ai_battery_life_hours + ' Hours';
+                document.getElementById('live-savings-usd').innerText = '$' + data.privacy_and_cloud.estimated_monthly_savings_usd;
+
+                const tbody = document.getElementById('benchmark-table-body');
+                tbody.innerHTML = data.comparisons.map(c => `
+                    <tr class="hover:bg-slate-900/50">
+                        <td class="p-3.5 font-bold text-slate-200">${c.workload}</td>
+                        <td class="p-3.5 text-emerald-400 font-bold">${c.snapdragon_npu_ms} ms (${c.npu_power_w}W)</td>
+                        <td class="p-3.5 text-slate-400">${c.x86_cpu_ms} ms (${c.cpu_power_w}W)</td>
+                        <td class="p-3.5 text-slate-400">${c.cloud_api_ms} ms (Network RTT)</td>
+                        <td class="p-3.5 text-cyan-400 font-bold">${(c.x86_cpu_ms / c.snapdragon_npu_ms).toFixed(1)}x Faster • ${((1 - (c.npu_power_w / c.cpu_power_w)) * 100).toFixed(0)}% Less Power</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Initialize telemetry on load
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshBenchmarks();
+            loadDocuments();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# OmniSnap AI — Dependencies
+# Optimized for Qualcomm Snapdragon® X Elite / Plus on HP OmniBook PCs
+
+# Core Web & API Framework
+fastapi>=0.110.0
+uvicorn>=0.28.0
+jinja2>=3.1.3
+python-multipart>=0.0.9
+pydantic>=2.6.0
+requests>=2.31.0
+numpy>=1.26.0
+
+# Document & Presentation Generators
+python-pptx>=1.0.0
+reportlab>=4.1.0
+Pillow>=10.2.0
+
+# Qualcomm Neural Network (QNN) & ONNX Runtime
+# Note: For Windows on ARM (HP OmniBook), install onnxruntime-qnn or onnxruntime-directml
+onnx>=1.15.0
+onnxruntime>=1.17.0; sys_platform != 'win32'
+# onnxruntime-qnn>=1.18.0; sys_platform == 'win32' and platform_machine == 'ARM64'
