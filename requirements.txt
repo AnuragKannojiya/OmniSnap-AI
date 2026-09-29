@@ -14,24 +14,23 @@ numpy>=1.24.0
 pillow>=10.0.0
 requests>=2.31.0
 
-# --- AI Runtime ---
-# Core ONNX Runtime (CPU fallback — works on all platforms)
-onnxruntime>=1.16.0
+# --- AI / ML Runtime ---
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers>=4.36.0
+sentence-transformers>=2.2.0
+ultralytics>=8.0.0
+opencv-python-headless>=4.8.0
+soundfile>=0.12.0
+accelerate>=0.25.0
 
-# Snapdragon NPU Support (Windows ARM64 only — install on target device):
+# --- Optional: ONNX Runtime (CPU fallback) ---
+# onnxruntime>=1.16.0
+
+# --- Optional: Snapdragon NPU (Windows ARM64 only) ---
 # pip install onnxruntime-qnn>=1.16.0
-
-# DirectML GPU Support (Windows only):
 # pip install onnxruntime-directml>=1.16.0
 
-# LLM Generation (optional, for Llama streaming):
-# pip install onnxruntime-genai>=0.5.0
-
-# --- Qualcomm AI Hub (optional — for model download/compile) ---
+# --- Optional: Qualcomm AI Hub ---
 # pip install qai-hub>=0.15.0
 # pip install qai-hub-models>=0.15.0
-
-# --- Tokenizers (optional — for production Whisper/Llama) ---
-# pip install transformers>=4.36.0
-# pip install tokenizers>=0.15.0
-# pip install sentencepiece>=0.1.99
