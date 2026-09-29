@@ -199,6 +199,7 @@ async def api_chat(request: ChatRequest):
             "latency_ms": round(latency, 1),
             "tokens": result.tokens_generated,
             "tokens_per_second": round(result.tokens_per_second, 1),
+            "tps": round(result.tokens_per_second, 1),
             "backend": result.backend,
         }
     except Exception as e:
@@ -248,6 +249,7 @@ async def api_summarize(request: SummarizeRequest):
             "summary": summary,
             "action_items": [{"task": a.task, "owner": a.owner, "deadline": a.deadline, "priority": a.priority}
                             for a in actions],
+            "actions": [f"{a.task} ({a.owner}, {a.deadline}) [{a.priority}]" for a in actions],
             "latency_ms": round(latency, 1),
         }
     except Exception as e:
@@ -276,8 +278,14 @@ async def api_detect(file: UploadFile = File(...)):
         privacy = app_state.yolo.check_privacy(img)
 
         return {
-            "detections": [{"bbox": [round(b, 1) for b in d.bbox], "confidence": round(d.confidence, 3), "class": d.class_name}
-                          for d in detections],
+            "detections": [{
+                "bbox": [round(b, 1) for b in d.bbox],
+                "box": [round(b, 1) for b in d.bbox],
+                "confidence": round(d.confidence, 3),
+                "class": d.class_name,
+                "label": d.class_name
+            } for d in detections],
+            "status": privacy.alert_level.upper(),
             "privacy_alert": {
                 "level": privacy.alert_level,
                 "items": privacy.detected_items,
@@ -294,27 +302,46 @@ async def api_detect(file: UploadFile = File(...)):
 
 
 @app.post("/api/rag/upload")
-async def api_rag_upload(file: UploadFile = File(...)):
-    """Upload and index a document — REAL embedding."""
+async def api_rag_upload(
+    file: Optional[UploadFile] = File(None),
+    files: Optional[List[UploadFile]] = File(None)
+):
+    """Upload and index documents — REAL embedding."""
     app_state.inference_count += 1
 
     if not app_state.rag:
         raise HTTPException(503, "RAG engine not initialized")
 
-    try:
-        file_bytes = await file.read()
-        # Save to temp file for text extraction
-        cache_dir = os.path.join(BASE_DIR, ".cache")
-        os.makedirs(cache_dir, exist_ok=True)
-        temp_path = os.path.join(cache_dir, file.filename)
-        with open(temp_path, "wb") as f:
-            f.write(file_bytes)
+    uploaded = []
+    if file:
+        uploaded.append(file)
+    if files:
+        uploaded.extend(files)
 
-        chunks = app_state.rag.add_document(temp_path)
+    if not uploaded:
+        raise HTTPException(400, "No file uploaded")
+
+    total_new_chunks = 0
+    filenames = []
+    cache_dir = os.path.join(BASE_DIR, ".cache")
+    os.makedirs(cache_dir, exist_ok=True)
+
+    try:
+        for f in uploaded:
+            file_bytes = await f.read()
+            temp_path = os.path.join(cache_dir, f.filename)
+            with open(temp_path, "wb") as out_f:
+                out_f.write(file_bytes)
+            chunks = app_state.rag.add_document(temp_path)
+            total_new_chunks += chunks
+            filenames.append(f.filename)
+
         return {
             "status": "success",
-            "chunks_indexed": chunks,
-            "filename": file.filename,
+            "message": f"Successfully indexed {len(filenames)} file(s) ({total_new_chunks} chunks)",
+            "chunks_indexed": total_new_chunks,
+            "filename": filenames[0] if len(filenames) == 1 else ", ".join(filenames),
+            "filenames": filenames,
             "total_chunks": app_state.rag.num_chunks,
             "total_documents": app_state.rag.num_documents,
         }

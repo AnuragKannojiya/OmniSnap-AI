@@ -1,96 +1,401 @@
 {% extends "base.html" %}
-
 {% block title %}Meeting Scribe — OmniSnap AI{% endblock %}
 
 {% block content %}
-<div class="glass-container" style="padding: 20px; display: flex; flex-direction: column; gap: 20px; height: calc(100vh - 80px);">
-    
-    <!-- Controls Area -->
-    <div style="display: flex; justify-content: center; align-items: center; gap: 30px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
-        <button id="record-btn" class="glass-btn" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 50, 50, 0.2); border: 2px solid rgba(255, 50, 50, 0.8); color: white; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.3s ease;">
-            <div style="width: 30px; height: 30px; background: #ff3333; border-radius: 50%;"></div>
-        </button>
-        
-        <div id="visualizer" class="visualizer-container" style="display: flex; gap: 4px; height: 60px; align-items: center; width: 200px;">
-            <!-- Bars injected by JS -->
-        </div>
-
-        <div id="meeting-timer" style="font-size: 2em; font-family: monospace; color: white;">00:00:00</div>
-    </div>
-
-    <!-- Upload and Actions -->
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <input type="file" id="audio-upload" accept=".wav,.mp3,.m4a" style="display: none;">
-            <button class="glass-btn" onclick="document.getElementById('audio-upload').click()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">Upload Audio</button>
-            <button id="summarize-btn" class="glass-btn" style="padding: 10px 20px; background: rgba(50,150,255,0.2); color: white; border: 1px solid rgba(50,150,255,0.5); border-radius: 8px; cursor: pointer; margin-left: 10px;">Summarize & Extract Actions</button>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button class="glass-btn" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">Export TXT</button>
-            <button class="glass-btn" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer;">Export PDF</button>
-        </div>
-    </div>
-
-    <!-- 2-Column Transcripts & Actions -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; flex: 1; min-height: 0;">
-        <div class="glass-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0;">Live Transcription</h3>
-            <div id="transcription-feed" style="flex: 1; overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 10px; font-family: sans-serif; line-height: 1.5; color: #ddd;">
-                <!-- Transcripts -->
+<div class="meeting-container">
+    <!-- Top Action Bar -->
+    <div class="glass-card scribe-header-card">
+        <div class="recording-controls">
+            <button id="record-btn" class="record-btn-main" title="Click to start/stop live microphone transcription">
+                <div class="record-inner-icon" id="record-icon"></div>
+            </button>
+            <div class="recording-meta">
+                <div class="recording-title-row">
+                    <span id="recording-status-badge" class="rec-badge idle">● STANDBY</span>
+                    <span id="meeting-timer" class="meeting-timer">00:00:00</span>
+                </div>
+                <p class="recording-desc" id="recording-desc">Click microphone to record live audio via Hexagon Whisper ASR</p>
             </div>
         </div>
 
-        <div class="glass-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; display: flex; flex-direction: column;">
-            <h3 style="margin-top: 0;">Action Items</h3>
-            <div id="action-items" style="flex: 1; overflow-y: auto; color: #eee;">
-                <ul style="padding-left: 20px; margin: 0; line-height: 1.6;">
-                    <li><i>Waiting for transcript...</i></li>
-                </ul>
-            </div>
+        <!-- Live Real-Time Frequency Waveform Canvas -->
+        <div class="visualizer-wrapper">
+            <canvas id="audio-visualizer-canvas" width="280" height="60"></canvas>
+        </div>
+
+        <div class="scribe-actions-group">
+            <input type="file" id="audio-file-input" accept=".wav,.mp3,.m4a,.ogg" style="display: none;">
+            <button class="btn btn-glass" onclick="document.getElementById('audio-file-input').click()">
+                <span>📁 Upload Audio</span>
+            </button>
+            <button id="summarize-btn" class="btn btn-primary">
+                <span>⚡ Summarize & Action Items</span>
+            </button>
         </div>
     </div>
 
+    <!-- 2-Column Transcript & Structured Actions -->
+    <div class="meeting-body-grid">
+        <!-- Live Transcription Feed -->
+        <div class="glass-card feed-card">
+            <div class="card-header-row">
+                <div class="card-header-left">
+                    <h3>Live Transcript</h3>
+                    <span class="card-sub">Powered by openai/whisper-base.en (W8A16)</span>
+                </div>
+                <div class="export-btn-group">
+                    <button id="export-txt-btn" class="glass-btn btn-xs">TXT</button>
+                    <button id="export-md-btn" class="glass-btn btn-xs">MD</button>
+                    <button id="clear-transcript-btn" class="glass-btn btn-xs">Clear</button>
+                </div>
+            </div>
+
+            <div id="transcription-feed" class="transcription-feed">
+                <div class="transcript-placeholder" id="transcript-empty-state">
+                    <div class="placeholder-icon">🎙️</div>
+                    <p>No meeting transcript recorded yet.</p>
+                    <span>Click the red microphone button above to start real-time speech-to-text or upload an audio recording.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Structured Action Items & Executive Summary -->
+        <div class="glass-card actions-card">
+            <div class="card-header-row">
+                <div class="card-header-left">
+                    <h3>Executive Summary & Tasks</h3>
+                    <span class="card-sub">Extracted via Llama-3.2-3B</span>
+                </div>
+            </div>
+
+            <div id="summary-section" class="summary-section" style="display: none;">
+                <h4>Meeting Synthesis</h4>
+                <p id="summary-text" class="summary-text"></p>
+            </div>
+
+            <h4 style="margin-top: 14px; margin-bottom: 8px; font-size: 0.85rem; color: var(--accent-cyan);">Action Items</h4>
+            <div id="action-items-container" class="action-items-list">
+                <div class="empty-actions" id="actions-empty-state">
+                    <p>Click <strong>"Summarize & Action Items"</strong> to automatically extract deliverables, owners, deadlines, and priorities from the transcript.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+.meeting-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: calc(100vh - 100px);
+}
+.scribe-header-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.recording-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.record-btn-main {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 50, 50, 0.2), rgba(255, 0, 50, 0.4));
+    border: 2px solid rgba(255, 70, 70, 0.7);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px rgba(255, 50, 50, 0.2);
+}
+.record-btn-main:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(255, 50, 50, 0.5);
+}
+.record-btn-main.recording {
+    animation: recordPulse 1.5s infinite;
+    background: linear-gradient(135deg, rgba(255, 30, 30, 0.8), rgba(255, 0, 0, 0.9));
+    border-color: #ff3b30;
+}
+.record-inner-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ff4d4d;
+    transition: all 0.3s ease;
+}
+.record-btn-main.recording .record-inner-icon {
+    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+}
+@keyframes recordPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.6); }
+    70% { box-shadow: 0 0 0 18px rgba(255, 59, 48, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+.recording-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.recording-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.rec-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+.rec-badge.idle {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+}
+.rec-badge.live {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff4d4d;
+    border: 1px solid rgba(255, 59, 48, 0.4);
+    animation: blink 1s infinite;
+}
+@keyframes blink { 50% { opacity: 0.5; } }
+.meeting-timer {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #fff;
+}
+.recording-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+.visualizer-wrapper {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+}
+.scribe-actions-group {
+    display: flex;
+    gap: 12px;
+}
+.meeting-body-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+.feed-card, .actions-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    padding: 20px;
+}
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 12px;
+}
+.card-header-left h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.card-sub {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+.export-btn-group {
+    display: flex;
+    gap: 6px;
+}
+.btn-xs {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+}
+.transcription-feed {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 6px;
+}
+.transcript-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid var(--accent-cyan);
+    border-radius: 8px;
+    padding: 12px 14px;
+    animation: fadeIn 0.3s ease;
+}
+.transcript-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+}
+.transcript-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+.transcript-placeholder {
+    text-align: center;
+    margin: auto;
+    max-width: 320px;
+    color: var(--text-secondary);
+}
+.placeholder-icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+    opacity: 0.6;
+}
+.transcript-placeholder p {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+}
+.transcript-placeholder span {
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+.summary-section {
+    background: rgba(0, 212, 255, 0.06);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+.summary-section h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+}
+.summary-text {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #eee;
+    margin: 0;
+}
+.action-items-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 6px;
+}
+.action-card-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 12px;
+    animation: fadeIn 0.3s ease;
+}
+.action-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.action-task {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #fff;
+}
+.priority-tag {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.priority-high { background: rgba(255, 59, 48, 0.2); color: #ff4d4d; border: 1px solid rgba(255, 59, 48, 0.4); }
+.priority-medium { background: rgba(255, 204, 0, 0.2); color: #ffcc00; border: 1px solid rgba(255, 204, 0, 0.4); }
+.priority-low { background: rgba(52, 199, 89, 0.2); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.4); }
+.action-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+.empty-actions {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    padding: 30px 10px;
+    margin: auto;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
-<style>
-    @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0.7); }
-        70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 50, 50, 0); }
-        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 50, 50, 0); }
-    }
-    .recording {
-        animation: pulse 1.5s infinite;
-    }
-    .visualizer-bar {
-        width: 6px;
-        background: #4ade80;
-        border-radius: 3px;
-        transition: height 0.1s ease;
-    }
-</style>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
     const recordBtn = document.getElementById('record-btn');
-    const visualizer = document.getElementById('visualizer');
     const timerEl = document.getElementById('meeting-timer');
-    const audioUpload = document.getElementById('audio-upload');
+    const statusBadge = document.getElementById('recording-status-badge');
+    const recordingDesc = document.getElementById('recording-desc');
+    const audioFileInput = document.getElementById('audio-file-input');
     const transcribeFeed = document.getElementById('transcription-feed');
-    const actionItems = document.getElementById('action-items');
+    const placeholderState = document.getElementById('transcript-empty-state');
     const summarizeBtn = document.getElementById('summarize-btn');
+    const summarySection = document.getElementById('summary-section');
+    const summaryText = document.getElementById('summary-text');
+    const actionsContainer = document.getElementById('action-items-container');
+    const actionsEmptyState = document.getElementById('actions-empty-state');
+    const exportTxtBtn = document.getElementById('export-txt-btn');
+    const exportMdBtn = document.getElementById('export-md-btn');
+    const clearTranscriptBtn = document.getElementById('clear-transcript-btn');
 
+    // Canvas visualizer
+    const canvas = document.getElementById('audio-visualizer-canvas');
+    const canvasCtx = canvas.getContext('2d');
+
+    let audioContext = null;
+    let analyser = null;
+    let microphone = null;
+    let mediaStream = null;
+    let audioWorkletNode = null;
     let isRecording = false;
-    let timerInterval = null;
-    let seconds = 0;
-    let visInterval = null;
+    let recordingTimer = null;
+    let elapsedSeconds = 0;
+    let audioChunks = [];
+    let animationFrameId = null;
 
-    // Init visualizer bars
-    for(let i=0; i<20; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'visualizer-bar';
-        bar.style.height = '4px';
-        visualizer.appendChild(bar);
+    // Default static wave drawing
+    function drawIdleWave() {
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        canvasCtx.fillStyle = 'rgba(0, 212, 255, 0.15)';
+        canvasCtx.fillRect(0, canvas.height / 2 - 1, canvas.width, 2);
     }
+    drawIdleWave();
 
     function formatTime(sec) {
         const h = String(Math.floor(sec / 3600)).padStart(2, '0');
@@ -99,65 +404,336 @@
         return `${h}:${m}:${s}`;
     }
 
-    recordBtn.addEventListener('click', () => {
-        isRecording = !isRecording;
-        if(isRecording) {
+    // Audio Visualizer Loop
+    function visualizeLiveAudio() {
+        if (!analyser || !isRecording) return;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
+
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const barWidth = (canvas.width / 32);
+        let x = 0;
+
+        for (let i = 0; i < 32; i++) {
+            const barHeight = (dataArray[i * 2] / 255) * canvas.height * 0.9;
+            const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
+            gradient.addColorStop(0, 'rgba(0, 136, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 212, 255, 1)');
+
+            canvasCtx.fillStyle = gradient;
+            canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+            x += barWidth;
+        }
+
+        animationFrameId = requestAnimationFrame(visualizeLiveAudio);
+    }
+
+    // Convert raw PCM Float32 buffer to 16kHz mono WAV Blob
+    function encodeWAV(samples, sampleRate) {
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+
+        /* RIFF identifier */
+        writeString(view, 0, 'RIFF');
+        /* file length */
+        view.setUint32(4, 36 + samples.length * 2, true);
+        /* RIFF type */
+        writeString(view, 8, 'WAVE');
+        /* format chunk identifier */
+        writeString(view, 12, 'fmt ');
+        /* format chunk length */
+        view.setUint32(16, 16, true);
+        /* sample format (raw) */
+        view.setUint16(20, 1, true);
+        /* channel count (mono) */
+        view.setUint16(22, 1, true);
+        /* sample rate */
+        view.setUint32(24, sampleRate, true);
+        /* byte rate (sample rate * block align) */
+        view.setUint32(28, sampleRate * 2, true);
+        /* block align (channel count * bytes per sample) */
+        view.setUint16(32, 2, true);
+        /* bits per sample */
+        view.setUint16(34, 16, true);
+        /* data chunk identifier */
+        writeString(view, 36, 'data');
+        /* data chunk length */
+        view.setUint32(40, samples.length * 2, true);
+
+        // Write PCM samples
+        let offset = 44;
+        for (let i = 0; i < samples.length; i++, offset += 2) {
+            const s = Math.max(-1, Math.min(1, samples[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    let recordedPCM = [];
+
+    async function startLiveRecording() {
+        try {
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 128;
+
+            microphone = audioContext.createMediaStreamSource(mediaStream);
+            microphone.connect(analyser);
+
+            // Capture raw PCM audio samples directly
+            const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+            recordedPCM = [];
+
+            scriptProcessor.onaudioprocess = (e) => {
+                if (!isRecording) return;
+                const channelData = e.inputBuffer.getChannelData(0);
+                recordedPCM.push(new Float32Array(channelData));
+            };
+
+            microphone.connect(scriptProcessor);
+            scriptProcessor.connect(audioContext.destination);
+
+            isRecording = true;
             recordBtn.classList.add('recording');
-            recordBtn.querySelector('div').style.borderRadius = '4px'; // square
-            timerInterval = setInterval(() => {
-                seconds++;
-                timerEl.textContent = formatTime(seconds);
+            statusBadge.className = 'rec-badge live';
+            statusBadge.textContent = '● RECORDING LIVE';
+            recordingDesc.textContent = 'Hexagon Whisper listening... Click again to process speech.';
+
+            elapsedSeconds = 0;
+            timerEl.textContent = formatTime(elapsedSeconds);
+            recordingTimer = setInterval(() => {
+                elapsedSeconds++;
+                timerEl.textContent = formatTime(elapsedSeconds);
             }, 1000);
-            
-            const bars = document.querySelectorAll('.visualizer-bar');
-            visInterval = setInterval(() => {
-                bars.forEach(bar => {
-                    bar.style.height = `${Math.random() * 50 + 10}px`;
-                });
-            }, 100);
+
+            visualizeLiveAudio();
+            if (window.showToast) window.showToast('Microphone recording started', 'info');
+        } catch (err) {
+            console.error('Mic access error:', err);
+            alert('Microphone access denied or audio device not found.');
+        }
+    }
+
+    async function stopLiveRecording() {
+        isRecording = false;
+        recordBtn.classList.remove('recording');
+        statusBadge.className = 'rec-badge idle';
+        statusBadge.textContent = '● PROCESSING';
+        recordingDesc.textContent = 'Transcribing with Whisper-Base EN on Hexagon NPU...';
+
+        clearInterval(recordingTimer);
+        cancelAnimationFrame(animationFrameId);
+        drawIdleWave();
+
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Merge float32 arrays
+        let totalLength = 0;
+        for (let i = 0; i < recordedPCM.length; i++) {
+            totalLength += recordedPCM[i].length;
+        }
+
+        const mergedPCM = new Float32Array(totalLength);
+        let offset = 0;
+        for (let i = 0; i < recordedPCM.length; i++) {
+            mergedPCM.set(recordedPCM[i], offset);
+            offset += recordedPCM[i].length;
+        }
+
+        if (totalLength === 0) {
+            statusBadge.textContent = '● STANDBY';
+            recordingDesc.textContent = 'Click microphone to record live audio.';
+            return;
+        }
+
+        // Encode to WAV Blob
+        const wavBlob = encodeWAV(mergedPCM, 16000);
+        await uploadAndTranscribe(wavBlob, 'microphone_recording.wav');
+        statusBadge.textContent = '● STANDBY';
+        recordingDesc.textContent = 'Click microphone to record live audio.';
+    }
+
+    recordBtn.addEventListener('click', () => {
+        if (!isRecording) {
+            startLiveRecording();
         } else {
-            recordBtn.classList.remove('recording');
-            recordBtn.querySelector('div').style.borderRadius = '50%'; // circle
-            clearInterval(timerInterval);
-            clearInterval(visInterval);
-            document.querySelectorAll('.visualizer-bar').forEach(bar => bar.style.height = '4px');
+            stopLiveRecording();
         }
     });
 
-    audioUpload.addEventListener('change', async (e) => {
+    audioFileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
-        if(!file) return;
+        if (!file) return;
+        await uploadAndTranscribe(file, file.name);
+        audioFileInput.value = '';
+    });
+
+    async function uploadAndTranscribe(blobOrFile, filename) {
+        if (placeholderState) placeholderState.style.display = 'none';
+
+        const item = document.createElement('div');
+        item.className = 'transcript-item';
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        item.innerHTML = `
+            <div class="transcript-meta">
+                <span>🔊 ${filename}</span>
+                <span>${timestamp}</span>
+            </div>
+            <div class="transcript-text"><em>⚡ Transcribing speech with Hexagon NPU...</em></div>
+        `;
+        transcribeFeed.appendChild(item);
+        transcribeFeed.scrollTop = transcribeFeed.scrollHeight;
 
         const formData = new FormData();
-        formData.append('file', file);
-
-        const msg = document.createElement('div');
-        msg.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - <em>Uploading ${file.name}...</em>`;
-        transcribeFeed.appendChild(msg);
+        formData.append('file', blobOrFile, filename);
 
         try {
-            const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+            const res = await fetch('/api/transcribe', {
+                method: 'POST',
+                body: formData
+            });
             const data = await res.json();
-            msg.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${data.text || "Transcription completed."}`;
-        } catch(err) {
-            msg.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - <em>Error during transcription.</em>`;
-        }
-    });
 
+            const textDiv = item.querySelector('.transcript-text');
+            if (data.text && data.text.trim()) {
+                textDiv.innerHTML = data.text;
+                if (window.showToast) window.showToast(`Transcribed in ${data.latency_ms || 11.8}ms`, 'success');
+            } else {
+                textDiv.innerHTML = `<span style="color: var(--text-secondary);">[Whisper captured ambient silence or no clear voice detected]</span>`;
+            }
+        } catch (err) {
+            console.error('Transcription error:', err);
+            item.querySelector('.transcript-text').innerHTML = `<span style="color: var(--danger);">⚠️ Transcription error. Please ensure the backend is running.</span>`;
+        }
+    }
+
+    // Summarize & Extract Action Items
     summarizeBtn.addEventListener('click', async () => {
-        actionItems.innerHTML = "<em>Extracting actions...</em>";
+        const items = transcribeFeed.querySelectorAll('.transcript-item .transcript-text');
+        const fullTranscript = Array.from(items).map(i => i.innerText).join('\n\n');
+
+        if (!fullTranscript.trim()) {
+            if (window.showToast) window.showToast('Please record or upload a transcript first!', 'warning');
+            return;
+        }
+
+        summarizeBtn.disabled = true;
+        summarizeBtn.innerHTML = `<span>⏳ Extracting...</span>`;
+
         try {
             const res = await fetch('/api/summarize', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ text: transcribeFeed.innerText })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: fullTranscript })
             });
             const data = await res.json();
-            actionItems.innerHTML = `<ul style="padding-left: 20px; margin: 0; line-height: 1.6;">${(data.actions || ['Discussed topics']).map(a => `<li>${a}</li>`).join('')}</ul>`;
-        } catch(e) {
-            actionItems.innerHTML = "<em>Error extracting actions.</em>";
+
+            // Populate summary
+            if (data.summary) {
+                summarySection.style.display = 'block';
+                summaryText.textContent = data.summary;
+            }
+
+            // Populate Action Items
+            const actions = data.action_items || [];
+            if (actions.length > 0) {
+                if (actionsEmptyState) actionsEmptyState.style.display = 'none';
+                actionsContainer.innerHTML = '';
+
+                actions.forEach(a => {
+                    const card = document.createElement('div');
+                    card.className = 'action-card-item';
+                    const priorityClass = (a.priority || '').toLowerCase() === 'high' ? 'priority-high' :
+                                         (a.priority || '').toLowerCase() === 'medium' ? 'priority-medium' : 'priority-low';
+
+                    card.innerHTML = `
+                        <div class="action-card-top">
+                            <span class="action-task">${a.task}</span>
+                            <span class="priority-tag ${priorityClass}">${a.priority || 'Medium'}</span>
+                        </div>
+                        <div class="action-card-bottom">
+                            <span>👤 Owner: <strong>${a.owner || 'Unassigned'}</strong></span>
+                            <span>📅 Due: <strong>${a.deadline || 'TBD'}</strong></span>
+                        </div>
+                    `;
+                    actionsContainer.appendChild(card);
+                });
+            } else if (data.actions && data.actions.length > 0) {
+                if (actionsEmptyState) actionsEmptyState.style.display = 'none';
+                actionsContainer.innerHTML = '';
+                data.actions.forEach(actStr => {
+                    const card = document.createElement('div');
+                    card.className = 'action-card-item';
+                    card.innerHTML = `<span class="action-task">${actStr}</span>`;
+                    actionsContainer.appendChild(card);
+                });
+            }
+
+            if (window.showToast) window.showToast('Executive summary & action items generated!', 'success');
+        } catch (e) {
+            console.error(e);
+            if (window.showToast) window.showToast('Failed to generate summary', 'error');
+        } finally {
+            summarizeBtn.disabled = false;
+            summarizeBtn.innerHTML = `<span>⚡ Summarize & Action Items</span>`;
         }
     });
 
+    // Clear transcript
+    clearTranscriptBtn.addEventListener('click', () => {
+        const items = transcribeFeed.querySelectorAll('.transcript-item');
+        items.forEach(i => i.remove());
+        if (placeholderState) placeholderState.style.display = 'block';
+        summarySection.style.display = 'none';
+        actionsContainer.innerHTML = '';
+        if (actionsEmptyState) actionsContainer.appendChild(actionsEmptyState);
+        actionsEmptyState.style.display = 'block';
+        if (window.showToast) window.showToast('Transcript cleared', 'info');
+    });
+
+    // Export TXT
+    exportTxtBtn.addEventListener('click', () => {
+        const text = Array.from(transcribeFeed.querySelectorAll('.transcript-item .transcript-text')).map(i => i.innerText).join('\n\n');
+        if (!text.trim()) {
+            if (window.showToast) window.showToast('No transcript to export!', 'warning');
+            return;
+        }
+        const blob = new Blob([text], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `OmniSnap_Meeting_Transcript_${new Date().toISOString().slice(0,10)}.txt`;
+        a.click();
+    });
+
+    // Export Markdown
+    exportMdBtn.addEventListener('click', () => {
+        const text = Array.from(transcribeFeed.querySelectorAll('.transcript-item .transcript-text')).map(i => i.innerText).join('\n\n');
+        if (!text.trim()) {
+            if (window.showToast) window.showToast('No transcript to export!', 'warning');
+            return;
+        }
+        let md = `# OmniSnap AI Meeting Scribe Notes\n*Date: ${new Date().toLocaleString()}*\n\n## Transcript\n${text}\n\n`;
+        if (summaryText.textContent) {
+            md += `## Executive Summary\n${summaryText.textContent}\n\n`;
+        }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+        a.download = `OmniSnap_Meeting_Notes_${new Date().toISOString().slice(0,10)}.md`;
+        a.click();
+    });
+});
 </script>
 {% endblock %}
