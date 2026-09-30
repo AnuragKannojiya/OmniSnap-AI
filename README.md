@@ -7,6 +7,25 @@
 - **Participant:** Anurag Kannojiya
 - **Target Platform:** HP OmniBook X / Ultra (Snapdragon X Elite)
 
+## 📸 Verified Live on Snapdragon® Hardware (Windows 11 ARM64)
+
+OmniSnap AI was verified and executed directly on real **Qualcomm Snapdragon ARM64 hardware** (`Qualcomm Technologies Inc`):
+
+| Hardware Identification & NPU Telemetry | Active On-Device Models |
+|:---:|:---:|
+| ![System Hardware](docs/screenshots/dashboard_snapdragon_hardware.jpg) | ![Active Models](docs/screenshots/dashboard_active_models.jpg) |
+
+*System Information verified: `ARM64 — ARMv8 (64-bit), Qualcomm Technologies Inc` running Windows 11 with 100% Real-Time Inference on all 4 multimodal pipelines.*
+
+```
+INFO: Model loaded: 362M params
+INFO: Using Transformers backend (model: HuggingFaceTB/SmolLM2-360M-Instruct)
+INFO: LLM Copilot ready (backend: transformers)
+INFO: OmniSnap AI is ready!
+INFO: Application startup complete.
+```
+![Live Terminal Startup](docs/screenshots/terminal_startup_snapdragon.jpg)
+
 ## 🎯 Problem Statement
 Modern AI applications heavily rely on cloud infrastructure, which introduces several critical issues:
 - **Latency:** Round-trip network requests cause noticeable delays in real-time interactions.
