@@ -141,7 +141,26 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
-templates.env.cache = {}  # Fix Jinja2 3.2+ unhashable cache key bug
+
+# Fix Jinja2 3.2+ crash: template cache keys contain dicts which are unhashable
+class _SafeCache(dict):
+    def get(self, key, default=None):
+        try:
+            return super().get(key, default)
+        except TypeError:
+            return default
+    def __setitem__(self, key, value):
+        try:
+            super().__setitem__(key, value)
+        except TypeError:
+            pass
+    def __contains__(self, key):
+        try:
+            return super().__contains__(key)
+        except TypeError:
+            return False
+
+templates.env.cache = _SafeCache()
 
 # --------------- Pydantic Models ---------------
 class ChatRequest(BaseModel):
