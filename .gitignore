@@ -66,3 +66,5 @@ models/
 *.weights
 *.pt
 *.bin
+.DS_Store
+*.pyc

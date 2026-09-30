@@ -348,6 +348,10 @@
     padding: 6px 12px;
     font-size: 0.75rem;
 }
+@media (max-width: 900px) {
+    .chat-page-container { grid-template-columns: 1fr; height: auto; }
+    .chat-main { min-height: 60vh; }
+}
 </style>
 {% endblock %}
 
@@ -364,6 +368,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearChatBtn = document.getElementById('clear-chat-btn');
     const backendEl = document.getElementById('copilot-backend');
     let totalTokens = 0;
+
+    // Auto-grow textarea
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = '48px';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+    });
 
     // Fetch initial model backend
     fetch('/api/system-info')
@@ -413,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!msg) return;
 
         chatInput.value = '';
+        chatInput.style.height = '48px';
         addMessage(msg, true);
 
         typingIndicator.style.display = 'block';

@@ -341,6 +341,9 @@
     font-size: 0.8rem;
     line-height: 1.4;
 }
+@media (max-width: 900px) {
+    .rag-container { grid-template-columns: 1fr; height: auto; }
+}
 </style>
 {% endblock %}
 
@@ -423,8 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i]);
-            formData.append('file', files[i]); // support both
+            formData.append('file', files[i]);
         }
 
         try {

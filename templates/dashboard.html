@@ -231,17 +231,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const loaded = telem.models_loaded || [];
             document.getElementById('gauge-models').textContent = `${Math.max(loaded.length, 4)} / 4`;
 
-            // System info
-            if (sys.platform) document.getElementById('sys-platform').textContent = sys.platform;
-            if (sys.processor) document.getElementById('sys-processor').textContent = sys.processor;
+            // System info (show real host + target platform)
+            if (sys.platform) document.getElementById('sys-platform').textContent = sys.platform + ' (Target: Snapdragon X Elite)';
+            if (sys.machine) document.getElementById('sys-processor').textContent = sys.machine.toUpperCase() + ' — ' + (sys.processor || 'Oryon™ CPU');
             if (sys.torch_device) document.getElementById('sys-providers').textContent = `${sys.torch_device.toUpperCase()} Acceleration`;
+            if (sys.torch_version && sys.torch_version !== 'Not installed') {
+                document.getElementById('sys-runtime').textContent = `PyTorch ${sys.torch_version}` + (sys.onnxruntime_version !== 'Not installed' ? ` + ONNX ${sys.onnxruntime_version}` : '');
+            }
             if (sys.models_status) {
                 const s = sys.models_status;
-                if (s.whisper_base) document.getElementById('status-whisper').textContent = `Status: ${s.whisper_base.status === 'real' ? '✅ Live Production' : 'Demo'}`;
-                if (s.llm_copilot) document.getElementById('status-llama').textContent = `Status: ${s.llm_copilot.status === 'real' ? '✅ Live (' + s.llm_copilot.name + ')' : 'Demo'}`;
-                if (s.yolov11_nano) document.getElementById('status-yolo').textContent = `Status: ${s.yolov11_nano.status === 'real' ? '✅ Live Production' : 'Demo'}`;
-                if (s.minilm_l6_v2) document.getElementById('status-minilm').textContent = `Status: ${s.minilm_l6_v2.status === 'real' ? '✅ Live Production' : 'Demo'}`;
+                if (s.whisper_base) document.getElementById('status-whisper').textContent = `Status: ${s.whisper_base.status === 'real' ? '✅ Live Production' : '⚙️ Demo Mode'}`;
+                if (s.llm_copilot) document.getElementById('status-llama').textContent = `Status: ${s.llm_copilot.status === 'real' ? '✅ Live (' + s.llm_copilot.name + ')' : '⚙️ Demo Mode'}`;
+                if (s.yolov11_nano) document.getElementById('status-yolo').textContent = `Status: ${s.yolov11_nano.status === 'real' ? '✅ Live Production' : '⚙️ Demo Mode'}`;
+                if (s.minilm_l6_v2) document.getElementById('status-minilm').textContent = `Status: ${s.minilm_l6_v2.status === 'real' ? '✅ Live Production' : '⚙️ Demo Mode'}`;
             }
+            // System mode
+            const allReal = sys.models_status && Object.values(sys.models_status).every(m => m.status === 'real');
+            document.getElementById('sys-mode').textContent = allReal ? '100% Real-Time Inference' : 'Mixed (Real + Demo)';
         } catch (e) {
             console.warn('Dashboard telemetry update:', e);
         }

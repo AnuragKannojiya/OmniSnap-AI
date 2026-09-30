@@ -352,6 +352,11 @@
     padding: 30px 10px;
     margin: auto;
 }
+@media (max-width: 900px) {
+    .meeting-body-grid { grid-template-columns: 1fr; }
+    .meeting-container { height: auto; }
+    .scribe-header-card { flex-direction: column; align-items: stretch; }
+}
 </style>
 {% endblock %}
 
