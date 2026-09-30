@@ -46,8 +46,12 @@ class LlamaCopilot:
     
     Backend priority:
     1. Ollama (if server running at localhost:11434)
-    2. HuggingFace Transformers (SmolLM2-360M-Instruct by default)
+    2. HuggingFace Transformers
     3. Demo mode (mock responses)
+
+    Model Target:
+    - Dev/Demo: SmolLM2-360M-Instruct (auto-downloads, works everywhere)
+    - Production: Llama-3.2-3B-Instruct via Qualcomm AI Hub + QNN EP
     """
     
     OLLAMA_URL = "http://localhost:11434"

@@ -24,13 +24,13 @@ opencv-python-headless>=4.8.0
 soundfile>=0.12.0
 accelerate>=0.25.0
 
-# --- Optional: ONNX Runtime (CPU fallback) ---
-# onnxruntime>=1.16.0
+# --- Core ONNX Runtime ---
+onnxruntime>=1.16.0
 
-# --- Optional: Snapdragon NPU (Windows ARM64 only) ---
-# pip install onnxruntime-qnn>=1.16.0
-# pip install onnxruntime-directml>=1.16.0
+# --- Optional: Snapdragon NPU acceleration (Windows ARM64 only) ---
+# onnxruntime-qnn>=1.16.0
+# onnxruntime-directml>=1.16.0
 
 # --- Optional: Qualcomm AI Hub ---
-# pip install qai-hub>=0.15.0
-# pip install qai-hub-models>=0.15.0
+# qai-hub>=0.15.0
+# qai-hub-models>=0.15.0

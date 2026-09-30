@@ -31,18 +31,20 @@ flowchart TD
 ```
 **Execution Pipeline:** QNN HTP Backend → ONNX Runtime QNNExecutionProvider → Hexagon 45 TOPS NPU
 
+*Note: For development and demo purposes, the system defaults to running `SmolLM2-360M-Instruct` via HuggingFace Transformers. For production deployment on Snapdragon hardware, `Llama-3.2-3B-Instruct` via Qualcomm AI Hub (QNN) is the target model.*
+
 ## 🤖 AI Models (from Qualcomm AI Hub)
 
 | Model | Source | Quantization | Role | Hexagon Latency |
 |-------|--------|-------------|------|----------------|
 | **Whisper-Base EN** | Qualcomm AI Hub | W8A16 QNN HTP | Real-time ASR & meeting diarization | 11.8 ms |
-| **Llama-3.2-3B Instruct** | Qualcomm AI Hub | W4A16 QNN HTP | Autonomous reasoning & task execution | 28.5 ms |
+| **LLM Copilot** | Qualcomm AI Hub / HF | W4A16 QNN / FP32 | **Dev mode:** SmolLM2-360M-Instruct (Transformers)<br>**Production target:** Llama-3.2-3B Instruct via Qualcomm AI Hub QNN | 28.5 ms |
 | **YOLOv11-Nano** | Qualcomm AI Hub | W8A8 QNN HTP | Screen analysis & privacy guard | 4.2 ms (238 FPS) |
 | **all-MiniLM-L6-v2** | Qualcomm AI Hub | W8A16 ONNX | Semantic document search & RAG | 6.2 ms |
 
 ## ✨ Core Features
 - 🎙️ **Real-Time Meeting Scribe** (Whisper on NPU): Transcribes meetings locally without sending audio to the cloud.
-- 💬 **Hexagon Reasoning Copilot** (Llama-3.2-3B): Fully functional chat and autonomous agent reasoning.
+- 💬 **Reasoning Copilot** (SmolLM2 / Llama-3.2-3B): Fully functional chat and autonomous agent reasoning.
 - 📚 **Air-Gapped Document RAG** (MiniLM embeddings): Search and interact with local documents securely.
 - 👁️ **Screen Guard & Vision Inspector** (YOLOv11): Monitors screen content for sensitive data and automatically redacts PII.
 
