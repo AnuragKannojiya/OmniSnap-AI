@@ -15,7 +15,11 @@ OmniSnap AI was verified and executed directly on real **Qualcomm Snapdragon ARM
 |:---:|:---:|
 | ![System Hardware](docs/screenshots/dashboard_snapdragon_hardware.jpg) | ![Active Models](docs/screenshots/dashboard_active_models.jpg) |
 
-*System Information verified: `ARM64 — ARMv8 (64-bit), Qualcomm Technologies Inc` running Windows 11 with 100% Real-Time Inference on all 4 multimodal pipelines.*
+| Live Meeting Scribe (Whisper ASR + LLM) | Snapdragon vs x86 Empirical Benchmarks |
+|:---:|:---:|
+| ![Meeting Scribe Live](docs/screenshots/meeting_scribe_live.jpg) | ![Benchmarks Live](docs/screenshots/benchmarks_live.jpg) |
+
+*System Information verified: `ARM64 — ARMv8 (64-bit), Qualcomm Technologies Inc` running Windows 11 with 100% Real-Time Inference across Whisper speech recognition, agentic reasoning, computer vision, and local RAG.*
 
 ```
 INFO: Model loaded: 362M params
