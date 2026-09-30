@@ -1,85 +1,82 @@
 {% extends "base.html" %}
 {% block title %}Meeting Scribe — OmniSnap AI{% endblock %}
-{% block view_title %}Meeting Scribe & Transcription{% endblock %}
 
 {% block content %}
-<div class="scribe-workspace">
-    <!-- Top Audio Ingestion Controller -->
-    <div class="panel-card audio-controller-card">
-        <div class="audio-left-controls">
-            <button id="record-btn" class="oem-record-btn" title="Toggle audio recording">
-                <span class="record-symbol" id="record-symbol"></span>
+<div class="meeting-container">
+    <!-- Top Action Bar -->
+    <div class="glass-card scribe-header-card">
+        <div class="recording-controls">
+            <button id="record-btn" class="record-btn-main" title="Click to start/stop live microphone transcription">
+                <div class="record-inner-icon" id="record-icon"></div>
             </button>
-            <div class="audio-status-meta">
-                <div class="status-top-line">
-                    <span id="recording-status-tag" class="status-tag standby">Standby</span>
-                    <span id="meeting-timer" class="meeting-timer-mono">00:00:00</span>
+            <div class="recording-meta">
+                <div class="recording-title-row">
+                    <span id="recording-status-badge" class="rec-badge idle">● STANDBY</span>
+                    <span id="meeting-timer" class="meeting-timer">00:00:00</span>
                 </div>
-                <span class="status-sub-desc" id="status-sub-desc">Click button to capture audio via Hexagon Whisper-Base (16kHz PCM)</span>
+                <p class="recording-desc" id="recording-desc">Click microphone to record live audio via Hexagon Whisper ASR</p>
             </div>
         </div>
 
-        <!-- Real-Time Frequency Waveform Canvas -->
-        <div class="canvas-visualizer-container">
-            <canvas id="audio-visualizer-canvas" width="260" height="48"></canvas>
+        <!-- Live Real-Time Frequency Waveform Canvas -->
+        <div class="visualizer-wrapper">
+            <canvas id="audio-visualizer-canvas" width="280" height="60"></canvas>
         </div>
 
-        <!-- File Upload & Summarize -->
-        <div class="audio-right-actions">
+        <div class="scribe-actions-group">
             <input type="file" id="audio-file-input" accept=".wav,.mp3,.m4a,.ogg" style="display: none;">
-            <button class="btn btn-secondary" onclick="document.getElementById('audio-file-input').click()">
-                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <span>Upload Audio File</span>
+            <button class="btn btn-glass" onclick="document.getElementById('audio-file-input').click()">
+                <span>📁 Upload Audio</span>
             </button>
             <button id="summarize-btn" class="btn btn-primary">
-                <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                <span>Generate Recap</span>
+                <span>⚡ Summarize & Action Items</span>
             </button>
         </div>
     </div>
 
-    <!-- 2-Column Split: Transcript and Action Items -->
-    <div class="scribe-split-grid">
-        <!-- Live Transcript View -->
-        <div class="panel-card transcript-panel">
-            <div class="panel-header-clean">
-                <div>
-                    <h3 class="panel-title">Real-Time Transcription Feed</h3>
-                    <p class="panel-subtitle">openai/whisper-base.en • W8A16 Quantized on Hexagon NPU</p>
+    <!-- 2-Column Transcript & Structured Actions -->
+    <div class="meeting-body-grid">
+        <!-- Live Transcription Feed -->
+        <div class="glass-card feed-card">
+            <div class="card-header-row">
+                <div class="card-header-left">
+                    <h3>Live Transcript</h3>
+                    <span class="card-sub">Powered by openai/whisper-base.en (W8A16)</span>
                 </div>
-                <div class="header-action-group">
-                    <button id="export-txt-btn" class="btn btn-secondary btn-sm">Export TXT</button>
-                    <button id="export-md-btn" class="btn btn-secondary btn-sm">Export MD</button>
-                    <button id="clear-transcript-btn" class="btn btn-secondary btn-sm">Clear</button>
+                <div class="export-btn-group">
+                    <button id="export-txt-btn" class="glass-btn btn-xs">TXT</button>
+                    <button id="export-md-btn" class="glass-btn btn-xs">MD</button>
+                    <button id="clear-transcript-btn" class="glass-btn btn-xs">Clear</button>
                 </div>
             </div>
 
-            <div id="transcription-feed" class="transcript-feed-list">
-                <div class="feed-empty-state" id="feed-empty-state">
-                    <p>No audio transcribed in this session.</p>
-                    <span>Click the recording button above to capture live conversation, or upload a meeting recording.</span>
+            <div id="transcription-feed" class="transcription-feed">
+                <div class="transcript-placeholder" id="transcript-empty-state">
+                    <div class="placeholder-icon">🎙️</div>
+                    <p>No meeting transcript recorded yet.</p>
+                    <span>Click the red microphone button above to start real-time speech-to-text or upload an audio recording.</span>
                 </div>
             </div>
         </div>
 
-        <!-- Executive Summary & Action Items -->
-        <div class="panel-card recap-panel">
-            <div class="panel-header-clean">
-                <div>
-                    <h3 class="panel-title">Executive Recap & Deliverables</h3>
-                    <p class="panel-subtitle">Structured task extraction via on-device reasoning engine</p>
+        <!-- Structured Action Items & Executive Summary -->
+        <div class="glass-card actions-card">
+            <div class="card-header-row">
+                <div class="card-header-left">
+                    <h3>Executive Summary & Tasks</h3>
+                    <span class="card-sub">Extracted via Llama-3.2-3B</span>
                 </div>
             </div>
 
-            <div id="summary-container" class="recap-section-box" style="display: none;">
-                <span class="recap-box-label">Executive Brief</span>
-                <p id="summary-content" class="recap-box-text"></p>
+            <div id="summary-section" class="summary-section" style="display: none;">
+                <h4>Meeting Synthesis</h4>
+                <p id="summary-text" class="summary-text"></p>
             </div>
 
-            <span class="deliverables-heading">Deliverables & Action Items</span>
+            <h4 style="margin-top: 14px; margin-bottom: 8px; font-size: 0.85rem; color: var(--accent-cyan);">Action Items</h4>
             <div id="action-items-container" class="action-items-list">
-                <div class="empty-recap-prompt" id="actions-empty-state">
-                    Execute <strong>"Generate Recap"</strong> to automatically extract tasks, assignees, deadlines, and priorities from the transcript.
+                <div class="empty-actions" id="actions-empty-state">
+                    <p>Click <strong>"Summarize & Action Items"</strong> to automatically extract deliverables, owners, deadlines, and priorities from the transcript.</p>
                 </div>
             </div>
         </div>
@@ -87,250 +84,273 @@
 </div>
 
 <style>
-.scribe-workspace {
+.meeting-container {
     display: flex;
     flex-direction: column;
-    gap: 18px;
-    height: calc(100vh - 120px);
+    gap: 20px;
+    height: calc(100vh - 100px);
 }
-.audio-controller-card {
+.scribe-header-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 22px;
-    gap: 20px;
+    padding: 18px 24px;
+    gap: 24px;
+    flex-wrap: wrap;
 }
-.audio-left-controls {
+.recording-controls {
     display: flex;
     align-items: center;
     gap: 16px;
 }
-.oem-record-btn {
-    width: 46px;
-    height: 46px;
+.record-btn-main {
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    background: #1e293b;
-    border: 2px solid #475569;
+    background: linear-gradient(135deg, rgba(255, 50, 50, 0.2), rgba(255, 0, 50, 0.4));
+    border: 2px solid rgba(255, 70, 70, 0.7);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px rgba(255, 50, 50, 0.2);
 }
-.oem-record-btn:hover {
-    border-color: var(--accent-rose);
-    background: #281a28;
+.record-btn-main:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(255, 50, 50, 0.5);
 }
-.oem-record-btn.recording {
-    background: rgba(244, 63, 94, 0.2);
-    border-color: var(--accent-rose);
+.record-btn-main.recording {
+    animation: recordPulse 1.5s infinite;
+    background: linear-gradient(135deg, rgba(255, 30, 30, 0.8), rgba(255, 0, 0, 0.9));
+    border-color: #ff3b30;
 }
-.record-symbol {
-    width: 14px;
-    height: 14px;
+.record-inner-icon {
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    background: var(--accent-rose);
-    transition: all 0.2s ease;
+    background: #ff4d4d;
+    transition: all 0.3s ease;
 }
-.oem-record-btn.recording .record-symbol {
-    border-radius: 3px;
-    width: 12px;
-    height: 12px;
+.record-btn-main.recording .record-inner-icon {
+    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
 }
-.audio-status-meta {
+@keyframes recordPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.6); }
+    70% { box-shadow: 0 0 0 18px rgba(255, 59, 48, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+.recording-meta {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
 }
-.status-top-line {
+.recording-title-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
-.status-tag {
-    font-size: 0.65rem;
-    font-family: var(--font-mono);
-    text-transform: uppercase;
+.rec-badge {
+    font-size: 0.7rem;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: var(--radius-sm);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 12px;
 }
-.status-tag.standby {
-    background: #1e293b;
-    color: var(--text-dim);
+.rec-badge.idle {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
 }
-.status-tag.recording {
-    background: rgba(244, 63, 94, 0.2);
-    color: var(--accent-rose);
-    border: 1px solid rgba(244, 63, 94, 0.4);
+.rec-badge.live {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff4d4d;
+    border: 1px solid rgba(255, 59, 48, 0.4);
+    animation: blink 1s infinite;
 }
-.meeting-timer-mono {
-    font-size: 1.15rem;
-    font-family: var(--font-mono);
+@keyframes blink { 50% { opacity: 0.5; } }
+.meeting-timer {
+    font-size: 1.4rem;
     font-weight: 700;
-    color: var(--text-main);
+    font-family: monospace;
+    color: #fff;
 }
-.status-sub-desc {
-    font-size: 0.72rem;
-    color: var(--text-dim);
+.recording-desc {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
 }
-.canvas-visualizer-container {
-    background: var(--bg-input);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 2px 8px;
+.visualizer-wrapper {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 4px 10px;
     display: flex;
     align-items: center;
 }
-.audio-right-actions {
+.scribe-actions-group {
     display: flex;
-    gap: 10px;
+    gap: 12px;
 }
-
-/* 2-Column Grid */
-.scribe-split-grid {
+.meeting-body-grid {
     display: grid;
     grid-template-columns: 3fr 2fr;
-    gap: 18px;
+    gap: 20px;
     flex: 1;
     min-height: 0;
 }
-.transcript-panel, .recap-panel {
+.feed-card, .actions-card {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
     padding: 20px;
 }
-.header-action-group {
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 12px;
+}
+.card-header-left h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.card-sub {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+.export-btn-group {
     display: flex;
     gap: 6px;
 }
-.transcript-feed-list {
+.btn-xs {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+}
+.transcription-feed {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding-right: 4px;
+    padding-right: 6px;
 }
-.transcript-row-card {
-    background: var(--bg-card-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 12px 16px;
-    animation: fadeInMsg 0.2s ease forwards;
+.transcript-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 3px solid var(--accent-cyan);
+    border-radius: 8px;
+    padding: 12px 14px;
+    animation: fadeIn 0.3s ease;
 }
-.transcript-top-meta {
+.transcript-meta {
     display: flex;
     justify-content: space-between;
-    font-size: 0.68rem;
-    font-family: var(--font-mono);
+    font-size: 0.72rem;
     color: var(--accent-cyan);
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
-.transcript-body-text {
-    font-size: 0.88rem;
-    line-height: 1.55;
-    color: var(--text-main);
-}
-.feed-empty-state {
-    margin: auto;
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 0.82rem;
-    max-width: 320px;
+.transcript-text {
+    font-size: 0.9rem;
     line-height: 1.5;
+    color: var(--text-primary);
 }
-.feed-empty-state p {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin-bottom: 4px;
+.transcript-placeholder {
+    text-align: center;
+    margin: auto;
+    max-width: 320px;
+    color: var(--text-secondary);
 }
-
-/* Recap Column */
-.recap-section-box {
-    background: rgba(2, 132, 199, 0.08);
-    border: 1px solid rgba(2, 132, 199, 0.2);
-    border-radius: var(--radius-sm);
-    padding: 12px 14px;
+.placeholder-icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+    opacity: 0.6;
+}
+.transcript-placeholder p {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+}
+.transcript-placeholder span {
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+.summary-section {
+    background: rgba(0, 212, 255, 0.06);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    border-radius: 10px;
+    padding: 14px;
     margin-bottom: 14px;
 }
-.recap-box-label {
-    display: block;
-    font-size: 0.68rem;
-    font-weight: 700;
+.summary-section h4 {
+    font-size: 0.8rem;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     color: var(--accent-cyan);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
-.recap-box-text {
-    font-size: 0.82rem;
-    color: var(--text-main);
+.summary-text {
+    font-size: 0.85rem;
     line-height: 1.5;
-}
-.deliverables-heading {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    display: block;
+    color: #eee;
+    margin: 0;
 }
 .action-items-list {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding-right: 4px;
+    gap: 10px;
+    padding-right: 6px;
 }
-.action-item-tile {
-    background: var(--bg-card-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 11px 13px;
+.action-card-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 12px;
+    animation: fadeIn 0.3s ease;
 }
-.action-tile-top {
+.action-card-top {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 8px;
     margin-bottom: 6px;
 }
-.action-title {
-    font-size: 0.84rem;
+.action-task {
+    font-size: 0.88rem;
     font-weight: 600;
-    color: var(--text-main);
+    color: #fff;
 }
-.priority-chip {
-    font-size: 0.64rem;
-    font-family: var(--font-mono);
+.priority-tag {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 4px;
-    flex-shrink: 0;
 }
-.priority-chip.high { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
-.priority-chip.medium { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
-.priority-chip.low { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
-.action-tile-bottom {
+.priority-high { background: rgba(255, 59, 48, 0.2); color: #ff4d4d; border: 1px solid rgba(255, 59, 48, 0.4); }
+.priority-medium { background: rgba(255, 204, 0, 0.2); color: #ffcc00; border: 1px solid rgba(255, 204, 0, 0.4); }
+.priority-low { background: rgba(52, 199, 89, 0.2); color: #34c759; border: 1px solid rgba(52, 199, 89, 0.4); }
+.action-card-bottom {
     display: flex;
     justify-content: space-between;
     font-size: 0.72rem;
-    color: var(--text-dim);
+    color: var(--text-secondary);
 }
-.empty-recap-prompt {
-    margin: auto;
+.empty-actions {
     text-align: center;
-    color: var(--text-dim);
-    font-size: 0.8rem;
-    line-height: 1.5;
-    padding: 24px;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    padding: 30px 10px;
+    margin: auto;
 }
 </style>
 {% endblock %}
@@ -340,302 +360,378 @@
 document.addEventListener('DOMContentLoaded', () => {
     const recordBtn = document.getElementById('record-btn');
     const timerEl = document.getElementById('meeting-timer');
-    const statusTag = document.getElementById('recording-status-tag');
-    const statusDesc = document.getElementById('status-sub-desc');
-    const audioInput = document.getElementById('audio-file-input');
-    const feed = document.getElementById('transcription-feed');
-    const emptyFeed = document.getElementById('feed-empty-state');
+    const statusBadge = document.getElementById('recording-status-badge');
+    const recordingDesc = document.getElementById('recording-desc');
+    const audioFileInput = document.getElementById('audio-file-input');
+    const transcribeFeed = document.getElementById('transcription-feed');
+    const placeholderState = document.getElementById('transcript-empty-state');
     const summarizeBtn = document.getElementById('summarize-btn');
-    const summaryBox = document.getElementById('summary-container');
-    const summaryContent = document.getElementById('summary-content');
-    const actionsBox = document.getElementById('action-items-container');
-    const emptyActions = document.getElementById('actions-empty-state');
-    const exportTxt = document.getElementById('export-txt-btn');
-    const exportMd = document.getElementById('export-md-btn');
-    const clearBtn = document.getElementById('clear-transcript-btn');
+    const summarySection = document.getElementById('summary-section');
+    const summaryText = document.getElementById('summary-text');
+    const actionsContainer = document.getElementById('action-items-container');
+    const actionsEmptyState = document.getElementById('actions-empty-state');
+    const exportTxtBtn = document.getElementById('export-txt-btn');
+    const exportMdBtn = document.getElementById('export-md-btn');
+    const clearTranscriptBtn = document.getElementById('clear-transcript-btn');
 
-    // Visualizer Canvas
+    // Canvas visualizer
     const canvas = document.getElementById('audio-visualizer-canvas');
-    const ctx = canvas.getContext('2d');
+    const canvasCtx = canvas.getContext('2d');
 
-    let audioCtx = null;
+    let audioContext = null;
     let analyser = null;
-    let micStream = null;
+    let microphone = null;
+    let mediaStream = null;
+    let audioWorkletNode = null;
     let isRecording = false;
-    let secTimer = null;
-    let totalSec = 0;
-    let animId = null;
-    let recordedPCM = [];
+    let recordingTimer = null;
+    let elapsedSeconds = 0;
+    let audioChunks = [];
+    let animationFrameId = null;
 
-    function drawIdle() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(0, canvas.height / 2 - 1, canvas.width, 2);
+    // Default static wave drawing
+    function drawIdleWave() {
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+        canvasCtx.fillStyle = 'rgba(0, 212, 255, 0.15)';
+        canvasCtx.fillRect(0, canvas.height / 2 - 1, canvas.width, 2);
     }
-    drawIdle();
+    drawIdleWave();
 
-    function formatTime(s) {
-        const h = String(Math.floor(s / 3600)).padStart(2, '0');
-        const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-        const sec = String(s % 60).padStart(2, '0');
-        return `${h}:${m}:${sec}`;
+    function formatTime(sec) {
+        const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+        const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
     }
 
-    function renderAudioWaves() {
+    // Audio Visualizer Loop
+    function visualizeLiveAudio() {
         if (!analyser || !isRecording) return;
-        const bins = analyser.frequencyBinCount;
-        const data = new Uint8Array(bins);
-        analyser.getByteFrequencyData(data);
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyser.getByteFrequencyData(dataArray);
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const barWidth = canvas.width / 28;
+        canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const barWidth = (canvas.width / 32);
         let x = 0;
 
-        for (let i = 0; i < 28; i++) {
-            const h = (data[i * 2] / 255) * canvas.height * 0.9;
-            ctx.fillStyle = '#0284c7';
-            ctx.fillRect(x, canvas.height - h, barWidth - 2, h);
+        for (let i = 0; i < 32; i++) {
+            const barHeight = (dataArray[i * 2] / 255) * canvas.height * 0.9;
+            const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
+            gradient.addColorStop(0, 'rgba(0, 136, 255, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 212, 255, 1)');
+
+            canvasCtx.fillStyle = gradient;
+            canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
             x += barWidth;
         }
 
-        animId = requestAnimationFrame(renderAudioWaves);
+        animationFrameId = requestAnimationFrame(visualizeLiveAudio);
     }
 
-    function createWAVBlob(samples, sampleRate) {
-        const buf = new ArrayBuffer(44 + samples.length * 2);
-        const v = new DataView(buf);
-        function s(idx, str) { for (let i = 0; i < str.length; i++) v.setUint8(idx + i, str.charCodeAt(i)); }
+    // Convert raw PCM Float32 buffer to 16kHz mono WAV Blob
+    function encodeWAV(samples, sampleRate) {
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
 
-        s(0, 'RIFF');
-        v.setUint32(4, 36 + samples.length * 2, true);
-        s(8, 'WAVE');
-        s(12, 'fmt ');
-        v.setUint32(16, 16, true);
-        v.setUint16(20, 1, true); // PCM
-        v.setUint16(22, 1, true); // Mono
-        v.setUint32(24, sampleRate, true);
-        v.setUint32(28, sampleRate * 2, true);
-        v.setUint16(32, 2, true);
-        v.setUint16(34, 16, true);
-        s(36, 'data');
-        v.setUint32(40, samples.length * 2, true);
+        /* RIFF identifier */
+        writeString(view, 0, 'RIFF');
+        /* file length */
+        view.setUint32(4, 36 + samples.length * 2, true);
+        /* RIFF type */
+        writeString(view, 8, 'WAVE');
+        /* format chunk identifier */
+        writeString(view, 12, 'fmt ');
+        /* format chunk length */
+        view.setUint32(16, 16, true);
+        /* sample format (raw) */
+        view.setUint16(20, 1, true);
+        /* channel count (mono) */
+        view.setUint16(22, 1, true);
+        /* sample rate */
+        view.setUint32(24, sampleRate, true);
+        /* byte rate (sample rate * block align) */
+        view.setUint32(28, sampleRate * 2, true);
+        /* block align (channel count * bytes per sample) */
+        view.setUint16(32, 2, true);
+        /* bits per sample */
+        view.setUint16(34, 16, true);
+        /* data chunk identifier */
+        writeString(view, 36, 'data');
+        /* data chunk length */
+        view.setUint32(40, samples.length * 2, true);
 
+        // Write PCM samples
         let offset = 44;
         for (let i = 0; i < samples.length; i++, offset += 2) {
-            const sm = Math.max(-1, Math.min(1, samples[i]));
-            v.setInt16(offset, sm < 0 ? sm * 0x8000 : sm * 0x7FFF, true);
+            const s = Math.max(-1, Math.min(1, samples[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
         }
-        return new Blob([v], { type: 'audio/wav' });
+
+        return new Blob([view], { type: 'audio/wav' });
     }
 
-    async function startRecording() {
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    let recordedPCM = [];
+
+    async function startLiveRecording() {
         try {
-            micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-            analyser = audioCtx.createAnalyser();
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            analyser = audioContext.createAnalyser();
             analyser.fftSize = 128;
 
-            const source = audioCtx.createMediaStreamSource(micStream);
-            source.connect(analyser);
+            microphone = audioContext.createMediaStreamSource(mediaStream);
+            microphone.connect(analyser);
 
-            const sp = audioCtx.createScriptProcessor(4096, 1, 1);
+            // Capture raw PCM audio samples directly
+            const scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
             recordedPCM = [];
 
-            sp.onaudioprocess = (e) => {
+            scriptProcessor.onaudioprocess = (e) => {
                 if (!isRecording) return;
-                recordedPCM.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                const channelData = e.inputBuffer.getChannelData(0);
+                recordedPCM.push(new Float32Array(channelData));
             };
 
-            source.connect(sp);
-            sp.connect(audioCtx.destination);
+            microphone.connect(scriptProcessor);
+            scriptProcessor.connect(audioContext.destination);
 
             isRecording = true;
             recordBtn.classList.add('recording');
-            statusTag.className = 'status-tag recording';
-            statusTag.textContent = 'Recording';
-            statusDesc.textContent = 'Hexagon Whisper listening... Click button to stop & transcribe.';
+            statusBadge.className = 'rec-badge live';
+            statusBadge.textContent = '● RECORDING LIVE';
+            recordingDesc.textContent = 'Hexagon Whisper listening... Click again to process speech.';
 
-            totalSec = 0;
-            timerEl.textContent = '00:00:00';
-            secTimer = setInterval(() => {
-                totalSec++;
-                timerEl.textContent = formatTime(totalSec);
+            elapsedSeconds = 0;
+            timerEl.textContent = formatTime(elapsedSeconds);
+            recordingTimer = setInterval(() => {
+                elapsedSeconds++;
+                timerEl.textContent = formatTime(elapsedSeconds);
             }, 1000);
 
-            renderAudioWaves();
-            showToast('Microphone stream active', 'info');
+            visualizeLiveAudio();
+            if (window.showToast) window.showToast('Microphone recording started', 'info');
         } catch (err) {
-            console.error(err);
-            alert('Unable to access system microphone.');
+            console.error('Mic access error:', err);
+            alert('Microphone access denied or audio device not found.');
         }
     }
 
-    async function stopRecording() {
+    async function stopLiveRecording() {
         isRecording = false;
         recordBtn.classList.remove('recording');
-        statusTag.className = 'status-tag standby';
-        statusTag.textContent = 'Processing';
-        statusDesc.textContent = 'Transcribing speech via on-device Whisper model...';
+        statusBadge.className = 'rec-badge idle';
+        statusBadge.textContent = '● PROCESSING';
+        recordingDesc.textContent = 'Transcribing with Whisper-Base EN on Hexagon NPU...';
 
-        clearInterval(secTimer);
-        cancelAnimationFrame(animId);
-        drawIdle();
+        clearInterval(recordingTimer);
+        cancelAnimationFrame(animationFrameId);
+        drawIdleWave();
 
-        if (micStream) micStream.getTracks().forEach(t => t.stop());
-
-        let totalLen = 0;
-        for (let i = 0; i < recordedPCM.length; i++) totalLen += recordedPCM[i].length;
-        if (totalLen === 0) {
-            statusTag.textContent = 'Standby';
-            statusDesc.textContent = 'Click button to capture audio via Hexagon Whisper.';
-            return;
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
         }
 
-        const merged = new Float32Array(totalLen);
+        // Merge float32 arrays
+        let totalLength = 0;
+        for (let i = 0; i < recordedPCM.length; i++) {
+            totalLength += recordedPCM[i].length;
+        }
+
+        const mergedPCM = new Float32Array(totalLength);
         let offset = 0;
         for (let i = 0; i < recordedPCM.length; i++) {
-            merged.set(recordedPCM[i], offset);
+            mergedPCM.set(recordedPCM[i], offset);
             offset += recordedPCM[i].length;
         }
 
-        const blob = createWAVBlob(merged, 16000);
-        await transcribePayload(blob, 'Microphone Input');
-        statusTag.textContent = 'Standby';
-        statusDesc.textContent = 'Click button to capture audio via Hexagon Whisper.';
+        if (totalLength === 0) {
+            statusBadge.textContent = '● STANDBY';
+            recordingDesc.textContent = 'Click microphone to record live audio.';
+            return;
+        }
+
+        // Encode to WAV Blob
+        const wavBlob = encodeWAV(mergedPCM, 16000);
+        await uploadAndTranscribe(wavBlob, 'microphone_recording.wav');
+        statusBadge.textContent = '● STANDBY';
+        recordingDesc.textContent = 'Click microphone to record live audio.';
     }
 
     recordBtn.addEventListener('click', () => {
-        if (!isRecording) startRecording();
-        else stopRecording();
+        if (!isRecording) {
+            startLiveRecording();
+        } else {
+            stopLiveRecording();
+        }
     });
 
-    audioInput.addEventListener('change', async (e) => {
+    audioFileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        await transcribePayload(file, file.name);
-        audioInput.value = '';
+        await uploadAndTranscribe(file, file.name);
+        audioFileInput.value = '';
     });
 
-    async function transcribePayload(blobOrFile, label) {
-        if (emptyFeed) emptyFeed.style.display = 'none';
+    async function uploadAndTranscribe(blobOrFile, filename) {
+        if (placeholderState) placeholderState.style.display = 'none';
 
-        const row = document.createElement('div');
-        row.className = 'transcript-row-card';
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const item = document.createElement('div');
+        item.className = 'transcript-item';
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        row.innerHTML = `
-            <div class="transcript-top-meta">
-                <span>CHANNEL: ${label}</span>
-                <span>${time}</span>
+        item.innerHTML = `
+            <div class="transcript-meta">
+                <span>🔊 ${filename}</span>
+                <span>${timestamp}</span>
             </div>
-            <div class="transcript-body-text"><em>Processing speech chunks on Hexagon NPU...</em></div>
+            <div class="transcript-text"><em>⚡ Transcribing speech with Hexagon NPU...</em></div>
         `;
-        feed.appendChild(row);
-        feed.scrollTop = feed.scrollHeight;
+        transcribeFeed.appendChild(item);
+        transcribeFeed.scrollTop = transcribeFeed.scrollHeight;
 
         const formData = new FormData();
-        formData.append('file', blobOrFile, label);
+        formData.append('file', blobOrFile, filename);
 
         try {
-            const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+            const res = await fetch('/api/transcribe', {
+                method: 'POST',
+                body: formData
+            });
             const data = await res.json();
-            const body = row.querySelector('.transcript-body-text');
 
+            const textDiv = item.querySelector('.transcript-text');
             if (data.text && data.text.trim()) {
-                body.textContent = data.text;
-                showToast(`Transcribed in ${data.latency_ms || 11.8} ms`, 'success');
+                textDiv.innerHTML = data.text;
+                if (window.showToast) window.showToast(`Transcribed in ${data.latency_ms || 11.8}ms`, 'success');
             } else {
-                body.innerHTML = `<span style="color: var(--text-dim);">[Ambient noise / no distinct vocal audio detected]</span>`;
+                textDiv.innerHTML = `<span style="color: var(--text-secondary);">[Whisper captured ambient silence or no clear voice detected]</span>`;
             }
-        } catch (e) {
-            console.error(e);
-            row.querySelector('.transcript-body-text').innerHTML = `<span style="color: var(--accent-rose);">Transcription request failed.</span>`;
+        } catch (err) {
+            console.error('Transcription error:', err);
+            item.querySelector('.transcript-text').innerHTML = `<span style="color: var(--danger);">⚠️ Transcription error. Please ensure the backend is running.</span>`;
         }
     }
 
+    // Summarize & Extract Action Items
     summarizeBtn.addEventListener('click', async () => {
-        const texts = Array.from(feed.querySelectorAll('.transcript-body-text')).map(el => el.innerText).join('\n\n');
-        if (!texts.trim()) {
-            showToast('No transcript content available for summarization.', 'warning');
+        const items = transcribeFeed.querySelectorAll('.transcript-item .transcript-text');
+        const fullTranscript = Array.from(items).map(i => i.innerText).join('\n\n');
+
+        if (!fullTranscript.trim()) {
+            if (window.showToast) window.showToast('Please record or upload a transcript first!', 'warning');
             return;
         }
 
         summarizeBtn.disabled = true;
-        summarizeBtn.innerHTML = `<span>Synthesizing...</span>`;
+        summarizeBtn.innerHTML = `<span>⏳ Extracting...</span>`;
 
         try {
             const res = await fetch('/api/summarize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: texts })
+                body: JSON.stringify({ text: fullTranscript })
             });
             const data = await res.json();
 
+            // Populate summary
             if (data.summary) {
-                summaryBox.style.display = 'block';
-                summaryContent.textContent = data.summary;
+                summarySection.style.display = 'block';
+                summaryText.textContent = data.summary;
             }
 
-            const items = data.action_items || [];
-            if (items.length > 0) {
-                if (emptyActions) emptyActions.style.display = 'none';
-                actionsBox.innerHTML = '';
+            // Populate Action Items
+            const actions = data.action_items || [];
+            if (actions.length > 0) {
+                if (actionsEmptyState) actionsEmptyState.style.display = 'none';
+                actionsContainer.innerHTML = '';
 
-                items.forEach(item => {
-                    const tile = document.createElement('div');
-                    tile.className = 'action-item-tile';
-                    const pri = (item.priority || 'medium').toLowerCase();
+                actions.forEach(a => {
+                    const card = document.createElement('div');
+                    card.className = 'action-card-item';
+                    const priorityClass = (a.priority || '').toLowerCase() === 'high' ? 'priority-high' :
+                                         (a.priority || '').toLowerCase() === 'medium' ? 'priority-medium' : 'priority-low';
 
-                    tile.innerHTML = `
-                        <div class="action-tile-top">
-                            <span class="action-title">${item.task}</span>
-                            <span class="priority-chip ${pri}">${item.priority || 'Normal'}</span>
+                    card.innerHTML = `
+                        <div class="action-card-top">
+                            <span class="action-task">${a.task}</span>
+                            <span class="priority-tag ${priorityClass}">${a.priority || 'Medium'}</span>
                         </div>
-                        <div class="action-tile-bottom">
-                            <span>Assignee: <strong>${item.owner || 'Unassigned'}</strong></span>
-                            <span>Deadline: <strong>${item.deadline || 'TBD'}</strong></span>
+                        <div class="action-card-bottom">
+                            <span>👤 Owner: <strong>${a.owner || 'Unassigned'}</strong></span>
+                            <span>📅 Due: <strong>${a.deadline || 'TBD'}</strong></span>
                         </div>
                     `;
-                    actionsBox.appendChild(tile);
+                    actionsContainer.appendChild(card);
+                });
+            } else if (data.actions && data.actions.length > 0) {
+                if (actionsEmptyState) actionsEmptyState.style.display = 'none';
+                actionsContainer.innerHTML = '';
+                data.actions.forEach(actStr => {
+                    const card = document.createElement('div');
+                    card.className = 'action-card-item';
+                    card.innerHTML = `<span class="action-task">${actStr}</span>`;
+                    actionsContainer.appendChild(card);
                 });
             }
-            showToast('Recap generated successfully', 'success');
+
+            if (window.showToast) window.showToast('Executive summary & action items generated!', 'success');
         } catch (e) {
             console.error(e);
-            showToast('Recap generation failed', 'error');
+            if (window.showToast) window.showToast('Failed to generate summary', 'error');
         } finally {
             summarizeBtn.disabled = false;
-            summarizeBtn.innerHTML = `<span>Generate Recap</span>`;
+            summarizeBtn.innerHTML = `<span>⚡ Summarize & Action Items</span>`;
         }
     });
 
-    clearBtn.addEventListener('click', () => {
-        feed.querySelectorAll('.transcript-row-card').forEach(c => c.remove());
-        if (emptyFeed) emptyFeed.style.display = 'block';
-        summaryBox.style.display = 'none';
-        actionsBox.innerHTML = '';
-        if (emptyActions) actionsBox.appendChild(emptyActions);
-        emptyActions.style.display = 'block';
-        showToast('Transcription buffer cleared', 'info');
+    // Clear transcript
+    clearTranscriptBtn.addEventListener('click', () => {
+        const items = transcribeFeed.querySelectorAll('.transcript-item');
+        items.forEach(i => i.remove());
+        if (placeholderState) placeholderState.style.display = 'block';
+        summarySection.style.display = 'none';
+        actionsContainer.innerHTML = '';
+        if (actionsEmptyState) actionsContainer.appendChild(actionsEmptyState);
+        actionsEmptyState.style.display = 'block';
+        if (window.showToast) window.showToast('Transcript cleared', 'info');
     });
 
-    exportTxt.addEventListener('click', () => {
-        const text = Array.from(feed.querySelectorAll('.transcript-body-text')).map(el => el.innerText).join('\n\n');
-        if (!text.trim()) return showToast('No transcript to export', 'warning');
+    // Export TXT
+    exportTxtBtn.addEventListener('click', () => {
+        const text = Array.from(transcribeFeed.querySelectorAll('.transcript-item .transcript-text')).map(i => i.innerText).join('\n\n');
+        if (!text.trim()) {
+            if (window.showToast) window.showToast('No transcript to export!', 'warning');
+            return;
+        }
+        const blob = new Blob([text], { type: 'text/plain' });
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
-        a.download = `OmniSnap_Transcript_${new Date().toISOString().slice(0,10)}.txt`;
+        a.href = URL.createObjectURL(blob);
+        a.download = `OmniSnap_Meeting_Transcript_${new Date().toISOString().slice(0,10)}.txt`;
         a.click();
     });
 
-    exportMd.addEventListener('click', () => {
-        const text = Array.from(feed.querySelectorAll('.transcript-body-text')).map(el => el.innerText).join('\n\n');
-        if (!text.trim()) return showToast('No transcript to export', 'warning');
-        let md = `# OmniSnap Meeting Intelligence Recap\n*Timestamp: ${new Date().toLocaleString()}*\n\n## Transcript\n${text}\n\n`;
-        if (summaryContent.textContent) md += `## Executive Brief\n${summaryContent.textContent}\n\n`;
+    // Export Markdown
+    exportMdBtn.addEventListener('click', () => {
+        const text = Array.from(transcribeFeed.querySelectorAll('.transcript-item .transcript-text')).map(i => i.innerText).join('\n\n');
+        if (!text.trim()) {
+            if (window.showToast) window.showToast('No transcript to export!', 'warning');
+            return;
+        }
+        let md = `# OmniSnap AI Meeting Scribe Notes\n*Date: ${new Date().toLocaleString()}*\n\n## Transcript\n${text}\n\n`;
+        if (summaryText.textContent) {
+            md += `## Executive Summary\n${summaryText.textContent}\n\n`;
+        }
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
-        a.download = `OmniSnap_Recap_${new Date().toISOString().slice(0,10)}.md`;
+        a.download = `OmniSnap_Meeting_Notes_${new Date().toISOString().slice(0,10)}.md`;
         a.click();
     });
 });

@@ -1,81 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Document RAG — OmniSnap AI{% endblock %}
-{% block view_title %}Air-Gapped Document RAG{% endblock %}
 
 {% block content %}
-<div class="rag-workspace">
-    <!-- Left Ingestion & Document Registry -->
-    <div class="rag-registry-col">
-        <!-- Ingestion Box -->
-        <div class="panel-card upload-panel">
-            <h4 class="card-header-label">Document Ingestion Pipeline</h4>
-            <p class="panel-desc">Embeds PDF, DOCX, and text into local vector space using 384-dimensional all-MiniLM-L6-v2 embeddings.</p>
-
-            <div id="upload-zone" class="oem-upload-dropzone">
-                <svg class="dropzone-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <span class="dropzone-primary">Drop documents here or click to browse</span>
-                <span class="dropzone-sub">PDF, TXT, MD, DOCX • On-Device Neural Parsing</span>
+<div class="rag-container">
+    <!-- Left Column: Document Ingestion & Knowledge Base -->
+    <div class="rag-left-col">
+        <!-- Ingestion Zone -->
+        <div class="glass-card rag-upload-card">
+            <h3>Air-Gapped Document Indexer</h3>
+            <p class="card-desc">Embeds documents directly into local 384-dimensional vector space using all-MiniLM-L6-v2.</p>
+            
+            <div id="upload-zone" class="upload-zone">
+                <div class="upload-icon">📄</div>
+                <div class="upload-primary-text">Drag & drop files here or click to browse</div>
+                <div class="upload-secondary-text">PDF, DOCX, TXT, MD • Max 50MB • 100% On-Device</div>
                 <input type="file" id="rag-file-input" multiple accept=".pdf,.txt,.md,.docx,.doc" style="display: none;">
             </div>
 
-            <div id="upload-progress-wrapper" class="progress-wrap" style="display: none;">
-                <div class="progress-track">
-                    <div id="upload-progress-fill" class="progress-indicator"></div>
+            <div id="upload-progress-wrapper" class="upload-progress-wrapper" style="display: none;">
+                <div class="progress-bar-track">
+                    <div id="upload-progress-fill" class="progress-bar-fill"></div>
                 </div>
-                <span id="upload-status-text" class="progress-caption">Generating embeddings on Hexagon NPU...</span>
+                <span id="upload-status-text" class="upload-status-text">Embedding text chunks on Hexagon NPU...</span>
             </div>
         </div>
 
-        <!-- Document Registry -->
-        <div class="panel-card doc-registry-panel">
-            <div class="panel-header-clean">
+        <!-- Indexed Knowledge Store -->
+        <div class="glass-card rag-docs-card">
+            <div class="docs-header-row">
                 <div>
-                    <h4 class="card-header-label" style="margin: 0;">Indexed Knowledge Repository</h4>
-                    <span id="indexed-stats" class="registry-stats-badge">0 documents • 0 vectors</span>
+                    <h3>Local Knowledge Index</h3>
+                    <span id="indexed-stats" class="card-sub">0 documents • 0 chunks</span>
                 </div>
-                <button id="refresh-docs-btn" class="btn btn-secondary btn-sm" title="Refresh local document list">
-                    <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                </button>
+                <button id="refresh-docs-btn" class="glass-btn btn-xs" title="Refresh document list">🔄</button>
             </div>
 
-            <ul id="doc-list" class="registry-docs-list">
-                <li class="registry-empty-row">No local documents indexed. Upload files above to build local vector database.</li>
+            <ul id="doc-list" class="indexed-doc-list">
+                <li class="doc-empty-state">No documents indexed yet. Upload documents above to build your private vector index.</li>
             </ul>
         </div>
     </div>
 
-    <!-- Right Search Column -->
-    <div class="rag-search-col">
-        <!-- Search Input Card -->
-        <div class="panel-card search-input-panel">
-            <div class="search-bar-wrap">
-                <input type="text" id="rag-search-input" class="form-input search-text-input" placeholder="Execute semantic query across indexed knowledge base..." autofocus>
-                <button id="rag-search-btn" class="btn btn-primary search-action-btn">
+    <!-- Right Column: Semantic Search & AI Retrieval -->
+    <div class="rag-right-col">
+        <!-- Search Input -->
+        <div class="glass-card rag-search-card">
+            <div class="search-input-group">
+                <input type="text" id="rag-search-input" class="glass-input" placeholder="Search knowledge base using natural language query..." autofocus>
+                <button id="rag-search-btn" class="btn btn-primary btn-search">
                     <span>Search</span>
                 </button>
             </div>
             
-            <div class="query-filters-bar">
-                <span class="filter-label">Technical query presets:</span>
-                <button class="preset-pill" data-query="Hexagon NPU power draw and battery endurance">Hexagon NPU Power Draw</button>
-                <button class="preset-pill" data-query="QNN Execution Provider ONNX Runtime configuration">QNN EP Configuration</button>
-                <button class="preset-pill" data-query="Snapdragon X Elite Oryon CPU specifications">Snapdragon X Elite Specs</button>
+            <!-- Quick Query Pills -->
+            <div class="query-pills-row">
+                <span class="pills-label">Sample queries:</span>
+                <button class="sample-pill" data-query="Snapdragon X Elite NPU power consumption">NPU Power Draw</button>
+                <button class="sample-pill" data-query="How does ONNX QNN Execution Provider work?">QNN Execution Provider</button>
+                <button class="sample-pill" data-query="Whisper ASR speedup on Hexagon">Whisper Speedup</button>
             </div>
         </div>
 
-        <!-- Semantic Search Results -->
-        <div class="panel-card search-results-panel">
-            <div class="panel-header-clean">
-                <div>
-                    <h4 class="card-header-label" style="margin: 0;">Semantic Vector Matches</h4>
-                    <span id="search-metrics" class="results-meta-caption">Cosine Similarity Ranking via SentenceTransformers</span>
-                </div>
+        <!-- Search Results Feed -->
+        <div class="glass-card rag-results-card">
+            <div class="results-header">
+                <h3>Semantic Matches</h3>
+                <span id="search-metrics" class="card-sub">Vector Cosine Similarity Ranking</span>
             </div>
 
-            <div id="rag-results-container" class="results-stream">
-                <div class="results-empty-guide" id="results-empty-state">
-                    <p>Enter an inquiry above to search indexed documents</p>
-                    <span>OmniSnap performs semantic similarity search against local 384-dimensional vector embeddings, surfacing exact matching paragraphs in milliseconds.</span>
+            <div id="rag-results-container" class="rag-results-list">
+                <div class="results-placeholder" id="results-empty-state">
+                    <div class="placeholder-icon">🔍</div>
+                    <p>Enter a question or topic above</p>
+                    <span>OmniSnap converts your query to an embedding vector and finds semantically relevant paragraphs across all your indexed documents.</span>
                 </div>
             </div>
         </div>
@@ -83,100 +80,102 @@
 </div>
 
 <style>
-.rag-workspace {
+.rag-container {
     display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 18px;
-    height: calc(100vh - 120px);
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    height: calc(100vh - 100px);
 }
-.rag-registry-col {
+.rag-left-col {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
     height: 100%;
 }
-.card-header-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    margin-bottom: 6px;
+.rag-upload-card {
+    padding: 20px;
 }
-.panel-desc {
-    font-size: 0.76rem;
-    color: var(--text-dim);
+.rag-upload-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.card-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
     line-height: 1.4;
     margin-bottom: 14px;
 }
-.oem-upload-dropzone {
-    border: 1px dashed #334155;
-    background: var(--bg-card-subtle);
-    border-radius: var(--radius-sm);
-    padding: 24px 16px;
+.upload-zone {
+    border: 2px dashed rgba(0, 212, 255, 0.3);
+    border-radius: 12px;
+    padding: 28px 16px;
     text-align: center;
     cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
+    background: rgba(0, 212, 255, 0.02);
+    transition: all 0.3s ease;
 }
-.oem-upload-dropzone:hover, .oem-upload-dropzone.dragover {
-    border-color: var(--accent-primary);
-    background: #141f38;
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.08);
+    transform: scale(1.01);
 }
-.dropzone-svg {
-    width: 28px;
-    height: 28px;
-    stroke: var(--accent-cyan);
-    fill: none;
-    stroke-width: 1.75;
-    margin-bottom: 2px;
+.upload-icon {
+    font-size: 2.2rem;
+    margin-bottom: 8px;
 }
-.dropzone-primary {
-    font-size: 0.84rem;
+.upload-primary-text {
+    font-size: 0.88rem;
     font-weight: 600;
-    color: var(--text-main);
+    color: #fff;
+    margin-bottom: 4px;
 }
-.dropzone-sub {
-    font-size: 0.68rem;
-    color: var(--text-dim);
+.upload-secondary-text {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
 }
-.progress-wrap {
-    margin-top: 12px;
+.upload-progress-wrapper {
+    margin-top: 14px;
 }
-.progress-track {
-    height: 4px;
-    background: #1e293b;
-    border-radius: 2px;
+.progress-bar-track {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
     overflow: hidden;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
-.progress-indicator {
+.progress-bar-fill {
     height: 100%;
     width: 0%;
-    background: var(--accent-primary);
-    transition: width 0.25s ease;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+    border-radius: 3px;
+    transition: width 0.3s ease;
 }
-.progress-caption {
-    font-size: 0.7rem;
+.upload-status-text {
+    font-size: 0.75rem;
     color: var(--accent-cyan);
-    font-family: var(--font-mono);
+    display: block;
 }
-.doc-registry-panel {
+.rag-docs-card {
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 18px;
+    padding: 20px;
 }
-.registry-stats-badge {
-    font-size: 0.68rem;
-    font-family: var(--font-mono);
-    color: var(--text-dim);
+.docs-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--glass-border);
 }
-.registry-docs-list {
+.docs-header-row h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+.indexed-doc-list {
     flex: 1;
     overflow-y: auto;
     list-style: none;
@@ -184,159 +183,163 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
-.registry-doc-row {
-    background: var(--bg-card-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 9px 12px;
+.indexed-doc-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 10px 12px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-size: 0.8rem;
+    justify-content: space-between;
+    font-size: 0.82rem;
 }
-.registry-doc-name {
+.doc-name {
     font-weight: 600;
-    color: var(--text-main);
+    color: #fff;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 190px;
+    max-width: 200px;
 }
-.registry-doc-status {
-    font-size: 0.65rem;
-    font-family: var(--font-mono);
-    background: #1e293b;
-    color: var(--accent-emerald);
+.doc-badge {
+    font-size: 0.7rem;
+    color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.1);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 6px;
 }
-.registry-empty-row {
-    color: var(--text-dim);
-    font-size: 0.78rem;
+.doc-empty-state {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
     text-align: center;
     padding: 24px 8px;
     line-height: 1.4;
 }
-
-/* Right Column */
-.rag-search-col {
+.rag-right-col {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 20px;
     height: 100%;
 }
-.search-input-panel {
-    padding: 16px 20px;
+.rag-search-card {
+    padding: 18px 24px;
 }
-.search-bar-wrap {
+.search-input-group {
     display: flex;
-    gap: 10px;
+    gap: 12px;
 }
-.search-text-input {
-    height: 42px;
-    padding: 10px 14px;
+.btn-search {
+    padding: 0 28px;
+    border-radius: 10px;
+    font-size: 0.9rem;
 }
-.search-action-btn {
-    height: 42px;
-    padding: 0 24px;
-    flex-shrink: 0;
-}
-.query-filters-bar {
+.query-pills-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 10px;
+    margin-top: 12px;
     flex-wrap: wrap;
 }
-.filter-label {
-    font-size: 0.7rem;
-    color: var(--text-dim);
+.pills-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
 }
-.preset-pill {
-    background: var(--bg-card-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    padding: 3px 8px;
-    color: var(--text-muted);
-    font-size: 0.7rem;
+.sample-pill {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 3px 10px;
+    color: var(--text-primary);
+    font-size: 0.72rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s;
 }
-.preset-pill:hover {
-    border-color: var(--accent-primary);
-    color: var(--text-main);
+.sample-pill:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.08);
 }
-
-.search-results-panel {
+.rag-results-card {
     flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 24px;
 }
-.results-meta-caption {
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    font-family: var(--font-mono);
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--glass-border);
 }
-.results-stream {
+.results-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+.rag-results-list {
     flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding-right: 4px;
+    gap: 14px;
+    padding-right: 6px;
 }
-.result-card-box {
-    background: var(--bg-card-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 14px 16px;
-    animation: fadeInMsg 0.2s ease forwards;
+.result-card-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    padding: 16px;
+    animation: fadeIn 0.3s ease;
 }
-.result-card-top-row {
+.result-card-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
-.result-doc-title {
+.result-source {
     font-size: 0.78rem;
     font-weight: 700;
     color: var(--accent-cyan);
 }
-.match-score-pill {
-    font-size: 0.68rem;
-    font-family: var(--font-mono);
+.result-score-badge {
+    font-size: 0.72rem;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 4px;
+    padding: 2px 8px;
+    border-radius: 8px;
 }
-.score-high { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
-.score-med { background: rgba(2, 132, 199, 0.15); color: var(--accent-cyan); border: 1px solid rgba(2, 132, 199, 0.3); }
-.score-low { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
-.result-excerpt-text {
-    font-size: 0.85rem;
+.score-high { background: rgba(0, 230, 118, 0.15); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.3); }
+.score-mid { background: rgba(0, 212, 255, 0.15); color: var(--accent-cyan); border: 1px solid rgba(0, 212, 255, 0.3); }
+.score-low { background: rgba(255, 234, 0, 0.15); color: #ffea00; border: 1px solid rgba(255, 234, 0, 0.3); }
+.result-content {
+    font-size: 0.88rem;
     line-height: 1.6;
-    color: var(--text-main);
+    color: #e0e0e0;
 }
-.results-empty-guide {
+.results-placeholder {
     margin: auto;
     text-align: center;
     max-width: 380px;
-    color: var(--text-dim);
-    line-height: 1.5;
+    color: var(--text-secondary);
 }
-.results-empty-guide p {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: var(--text-muted);
-    margin-bottom: 4px;
+.results-placeholder .placeholder-icon {
+    font-size: 2.4rem;
+    margin-bottom: 10px;
+    opacity: 0.5;
 }
-.results-empty-guide span {
-    font-size: 0.78rem;
+.results-placeholder p {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+}
+.results-placeholder span {
+    font-size: 0.8rem;
+    line-height: 1.4;
 }
 </style>
 {% endblock %}
@@ -346,105 +349,126 @@
 document.addEventListener('DOMContentLoaded', () => {
     const uploadZone = document.getElementById('upload-zone');
     const fileInput = document.getElementById('rag-file-input');
-    const progressWrap = document.getElementById('upload-progress-wrapper');
-    const progressIndicator = document.getElementById('upload-progress-fill');
+    const progressWrapper = document.getElementById('upload-progress-wrapper');
+    const progressFill = document.getElementById('upload-progress-fill');
     const statusText = document.getElementById('upload-status-text');
     const docList = document.getElementById('doc-list');
     const statsBadge = document.getElementById('indexed-stats');
     const refreshBtn = document.getElementById('refresh-docs-btn');
     const searchInput = document.getElementById('rag-search-input');
     const searchBtn = document.getElementById('rag-search-btn');
-    const stream = document.getElementById('rag-results-container');
-    const emptyGuide = document.getElementById('results-empty-state');
+    const resultsContainer = document.getElementById('rag-results-container');
+    const resultsEmptyState = document.getElementById('results-empty-state');
     const metricsLabel = document.getElementById('search-metrics');
 
+    // Load indexed documents on startup
     async function loadDocuments() {
         try {
             const res = await fetch('/api/rag/documents');
             const data = await res.json();
             const docs = data.documents || [];
-            const chunks = data.total_chunks || 0;
+            const totalChunks = data.total_chunks || 0;
 
-            statsBadge.textContent = `${docs.length} documents • ${chunks} chunks`;
+            statsBadge.textContent = `${docs.length} documents • ${totalChunks} chunks`;
 
             if (docs.length === 0) {
-                docList.innerHTML = '<li class="registry-empty-row">No documents indexed. Upload files above to initialize vector memory.</li>';
+                docList.innerHTML = '<li class="doc-empty-state">No documents indexed yet. Upload documents above to build your private vector index.</li>';
                 return;
             }
 
             docList.innerHTML = '';
-            docs.forEach(name => {
+            docs.forEach(docName => {
                 const li = document.createElement('li');
-                li.className = 'registry-doc-row';
+                li.className = 'indexed-doc-item';
                 li.innerHTML = `
-                    <span class="registry-doc-name" title="${name}">📄 ${name}</span>
-                    <span class="registry-doc-status">Vectorized</span>
+                    <span class="doc-name" title="${docName}">📄 ${docName}</span>
+                    <span class="doc-badge">Indexed</span>
                 `;
                 docList.appendChild(li);
             });
         } catch (e) {
-            console.error(e);
+            console.error('Failed to load documents:', e);
         }
     }
     loadDocuments();
     refreshBtn.addEventListener('click', loadDocuments);
 
+    // Drag and Drop
     uploadZone.addEventListener('click', () => fileInput.click());
-    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
     uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) handleUpload(e.dataTransfer.files);
+        if (e.dataTransfer.files.length) {
+            handleUpload(e.dataTransfer.files);
+        }
     });
 
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length) handleUpload(fileInput.files);
+        if (fileInput.files.length) {
+            handleUpload(fileInput.files);
+        }
     });
 
     async function handleUpload(files) {
-        progressWrap.style.display = 'block';
-        progressIndicator.style.width = '30%';
-        statusText.textContent = `Reading ${files.length} document payload(s)...`;
+        progressWrapper.style.display = 'block';
+        progressFill.style.width = '30%';
+        statusText.textContent = `Uploading ${files.length} document(s)...`;
 
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);
-            formData.append('file', files[i]);
+            formData.append('file', files[i]); // support both
         }
 
         try {
-            progressIndicator.style.width = '65%';
-            statusText.textContent = 'Generating 384D MiniLM embeddings on Hexagon NPU...';
+            progressFill.style.width = '60%';
+            statusText.textContent = 'Generating 384-dimensional embeddings on Hexagon NPU...';
 
-            const res = await fetch('/api/rag/upload', { method: 'POST', body: formData });
+            const res = await fetch('/api/rag/upload', {
+                method: 'POST',
+                body: formData
+            });
             const data = await res.json();
 
-            progressIndicator.style.width = '100%';
-            statusText.textContent = data.message || `Indexed ${data.chunks_indexed || 0} chunks successfully.`;
-            showToast(`Indexed ${files.length} document(s)`, 'success');
+            progressFill.style.width = '100%';
+            statusText.textContent = data.message || `Indexed ${data.chunks_indexed || 0} chunks successfully!`;
+
+            if (window.showToast) {
+                window.showToast(`Indexed ${files.length} file(s) into vector memory!`, 'success');
+            }
 
             await loadDocuments();
+
             setTimeout(() => {
-                progressWrap.style.display = 'none';
-                progressIndicator.style.width = '0%';
-            }, 2500);
-        } catch (e) {
-            console.error(e);
-            progressIndicator.style.background = 'var(--accent-rose)';
-            statusText.textContent = 'Document indexing failure.';
-            showToast('Document ingestion error', 'error');
+                progressWrapper.style.display = 'none';
+                progressFill.style.width = '0%';
+            }, 3000);
+        } catch (err) {
+            console.error(err);
+            progressFill.style.width = '100%';
+            progressFill.style.background = '#ff3b30';
+            statusText.textContent = 'Error indexing documents.';
+            if (window.showToast) window.showToast('Document upload failed', 'error');
         }
     }
 
-    async function executeSearch(customQuery) {
-        const q = customQuery || searchInput.value.trim();
+    // Semantic Search
+    async function performSearch(query) {
+        const q = query || searchInput.value.trim();
         if (!q) return;
 
-        if (emptyGuide) emptyGuide.style.display = 'none';
-        stream.innerHTML = '<div style="text-align: center; color: var(--accent-cyan); padding: 30px; font-size: 0.85rem;"><em>Executing cosine similarity ranking on Hexagon NPU...</em></div>';
+        if (resultsEmptyState) resultsEmptyState.style.display = 'none';
+        resultsContainer.innerHTML = '<div style="text-align: center; color: var(--accent-cyan); padding: 40px;"><em>⚡ Performing vector cosine similarity search...</em></div>';
 
         const t0 = performance.now();
+
         try {
             const res = await fetch('/api/rag/search', {
                 method: 'POST',
@@ -452,47 +476,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ query: q, top_k: 5 })
             });
             const data = await res.json();
-            const elapsed = Math.round(data.latency_ms || (performance.now() - t0));
+            const latency = Math.round(data.latency_ms || (performance.now() - t0));
             const results = data.results || [];
 
-            metricsLabel.textContent = `${results.length} results identified in ${elapsed} ms`;
+            metricsLabel.textContent = `Found ${results.length} matches in ${latency}ms`;
 
             if (results.length === 0) {
-                stream.innerHTML = '<div class="registry-empty-row">No semantic matches found. Try modifying your search query or indexing more documents.</div>';
+                resultsContainer.innerHTML = '<div class="doc-empty-state">No semantic matches found for this query. Try rephrasing or indexing more documents.</div>';
                 return;
             }
 
-            stream.innerHTML = '';
+            resultsContainer.innerHTML = '';
             results.forEach(r => {
                 const card = document.createElement('div');
-                card.className = 'result-card-box';
+                card.className = 'result-card-item';
                 const score = r.score || 0;
                 const scorePct = Math.round(score * 100);
-                const scoreClass = score >= 0.6 ? 'score-high' : score >= 0.35 ? 'score-med' : 'score-low';
+                const scoreClass = score >= 0.65 ? 'score-high' : score >= 0.4 ? 'score-mid' : 'score-low';
 
                 card.innerHTML = `
-                    <div class="result-card-top-row">
-                        <span class="result-doc-title">SOURCE: ${r.source || 'Knowledge Chunk'}</span>
-                        <span class="match-score-pill ${scoreClass}">${scorePct}% Match (cos: ${score.toFixed(3)})</span>
+                    <div class="result-card-top">
+                        <span class="result-source">📄 ${r.source || 'Document Chunk'}</span>
+                        <span class="result-score-badge ${scoreClass}">${scorePct}% Semantic Match (${score.toFixed(3)})</span>
                     </div>
-                    <div class="result-excerpt-text">${r.content}</div>
+                    <div class="result-content">${r.content}</div>
                 `;
-                stream.appendChild(card);
+                resultsContainer.appendChild(card);
             });
+
+            if (window.showToast) window.showToast(`Found ${results.length} relevant passages`, 'info');
         } catch (e) {
             console.error(e);
-            stream.innerHTML = '<div style="color: var(--accent-rose); text-align: center; padding: 20px;">Search query failed.</div>';
+            resultsContainer.innerHTML = '<div style="color: var(--danger); text-align: center; padding: 20px;">Search failed. Please ensure the backend is available.</div>';
         }
     }
 
-    searchBtn.addEventListener('click', () => executeSearch());
-    searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') executeSearch(); });
+    searchBtn.addEventListener('click', () => performSearch());
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') performSearch();
+    });
 
-    document.querySelectorAll('.preset-pill').forEach(btn => {
+    document.querySelectorAll('.sample-pill').forEach(btn => {
         btn.addEventListener('click', () => {
-            const query = btn.getAttribute('data-query');
-            searchInput.value = query;
-            executeSearch(query);
+            const q = btn.getAttribute('data-query');
+            searchInput.value = q;
+            performSearch(q);
         });
     });
 });
