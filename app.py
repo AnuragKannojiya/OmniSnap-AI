@@ -140,27 +140,37 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
-templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
-# Fix Jinja2 3.2+ crash: template cache keys contain dicts which are unhashable
+# Jinja2 3.1+ can place a dict inside the cache key for globals, which is unhashable.
+# Starlette's default cache handling is not tolerant of that, so we replace it with a
+# dict-like cache that ignores unhashable keys instead of crashing the app.
 class _SafeCache(dict):
     def get(self, key, default=None):
         try:
             return super().get(key, default)
         except TypeError:
             return default
+
     def __setitem__(self, key, value):
         try:
             super().__setitem__(key, value)
         except TypeError:
             pass
+
     def __contains__(self, key):
         try:
             return super().__contains__(key)
         except TypeError:
             return False
 
-templates.env.cache = _SafeCache()
+
+class SafeJinja2Templates(Jinja2Templates):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.env.cache = _SafeCache()
+
+
+templates = SafeJinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # --------------- Pydantic Models ---------------
 class ChatRequest(BaseModel):
@@ -178,27 +188,27 @@ class SearchRequest(BaseModel):
 # =================== HTML PAGES ===================
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(request, "dashboard.html")
 
 @app.get("/copilot", response_class=HTMLResponse)
 async def copilot_page(request: Request):
-    return templates.TemplateResponse("copilot.html", {"request": request})
+    return templates.TemplateResponse(request, "copilot.html")
 
 @app.get("/meeting", response_class=HTMLResponse)
 async def meeting_page(request: Request):
-    return templates.TemplateResponse("meeting.html", {"request": request})
+    return templates.TemplateResponse(request, "meeting.html")
 
 @app.get("/rag", response_class=HTMLResponse)
 async def rag_page(request: Request):
-    return templates.TemplateResponse("rag.html", {"request": request})
+    return templates.TemplateResponse(request, "rag.html")
 
 @app.get("/guard", response_class=HTMLResponse)
 async def guard_page(request: Request):
-    return templates.TemplateResponse("guard.html", {"request": request})
+    return templates.TemplateResponse(request, "guard.html")
 
 @app.get("/benchmarks", response_class=HTMLResponse)
 async def benchmarks_page(request: Request):
-    return templates.TemplateResponse("benchmarks.html", {"request": request})
+    return templates.TemplateResponse(request, "benchmarks.html")
 
 
 # =================== REST API ===================
@@ -619,4 +629,4 @@ async def websocket_audio(ws: WebSocket):
 
 # =================== MAIN ===================
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False, log_level="info")
