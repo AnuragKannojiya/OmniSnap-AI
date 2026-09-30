@@ -7,8 +7,8 @@
     <div class="glass-card guard-viewport-card">
         <div class="viewport-header">
             <div>
-                <h3>Real-Time Vision & Screen Guard</h3>
-                <span class="card-sub">Powered by YOLOv11-Nano on Hexagon NPU (4.2ms / 238 FPS)</span>
+                <h3>Screen Guard</h3>
+                
             </div>
             <div class="viewport-stats">
                 <span class="v-stat">FPS: <strong id="fps-stat" class="cyan">0.0</strong></span>
@@ -21,18 +21,18 @@
             <video id="guard-video" width="640" height="480" autoplay playsinline style="display: none;"></video>
             <canvas id="guard-canvas" width="640" height="480"></canvas>
             <div id="canvas-overlay-text" class="canvas-overlay-placeholder">
-                <div class="overlay-icon">👁️</div>
-                <p>Webcam / Vision Stream Standby</p>
-                <span>Click "Start Webcam" or "Upload Image" to run real-time YOLOv11 neural object detection and privacy threat scanning.</span>
+                
+                <p>Standby</p>
+                <span>Start webcam or upload an image to detect objects</span>
             </div>
         </div>
 
         <div class="viewport-controls">
             <button id="webcam-btn" class="btn btn-primary">
-                <span>📹 Start Webcam</span>
+                <span>Start webcam</span>
             </button>
             <button class="btn btn-glass" onclick="document.getElementById('img-upload').click()">
-                <span>🖼️ Upload Image</span>
+                <span>Upload image</span>
             </button>
             <input type="file" id="img-upload" accept="image/*" style="display: none;">
         </div>
@@ -42,7 +42,7 @@
     <div class="guard-sidebar">
         <!-- Privacy Status Card -->
         <div class="glass-card privacy-status-card">
-            <span class="status-card-label">Environmental Privacy Rating</span>
+            <span class="status-card-label">Privacy Status</span>
             <div id="privacy-status" class="privacy-status-badge safe">SAFE</div>
             <p id="privacy-desc" class="privacy-status-desc">No unauthorized recording devices, cell phones, or shoulder surfers detected.</p>
         </div>
@@ -50,7 +50,7 @@
         <!-- Detections List -->
         <div class="glass-card detections-panel">
             <div class="panel-header">
-                <h3>Detected Neural Objects</h3>
+                <h3>Detected objects</h3>
                 <span id="detection-count-tag" class="count-tag">0 items</span>
             </div>
             <ul id="detection-list" class="detection-items-list">
@@ -61,10 +61,10 @@
         <!-- Security Recommendations -->
         <div class="glass-card recommendations-panel">
             <div class="panel-header">
-                <h3>Privacy Shield Guidance</h3>
+                <h3>Recommendations</h3>
             </div>
             <ul id="recommendations-list" class="recommendations-items-list">
-                <li>✅ Physical perimeter looks clear for confidential work.</li>
+                <li>Physical perimeter looks clear for confidential work.</li>
             </ul>
         </div>
     </div>
@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 overlayPlaceholder.style.opacity = '0';
                 setTimeout(() => { overlayPlaceholder.style.display = 'none'; }, 300);
 
-                webcamBtn.innerHTML = '<span>🛑 Stop Webcam</span>';
+                webcamBtn.innerHTML = '<span>Stop webcam</span>';
                 webcamBtn.classList.remove('btn-primary');
                 webcamBtn.classList.add('btn-glass');
 
@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
         video.srcObject = null;
         isWebcamOn = false;
 
-        webcamBtn.innerHTML = '<span>📹 Start Webcam</span>';
+        webcamBtn.innerHTML = '<span>Start webcam</span>';
         webcamBtn.classList.add('btn-primary');
         webcamBtn.classList.remove('btn-glass');
 
@@ -479,11 +479,11 @@ document.addEventListener('DOMContentLoaded', () => {
         privacyStatus.textContent = status;
 
         if (status === 'DANGER') {
-            privacyDesc.textContent = '⚠️ High risk! Unauthorized recording device or camera detected nearby.';
+            privacyDesc.textContent = 'High risk! Unauthorized recording device or camera detected nearby.';
         } else if (status === 'CAUTION') {
-            privacyDesc.textContent = '⚠️ Caution: Person or peripheral detected in viewing perimeter.';
+            privacyDesc.textContent = 'Caution: Person or peripheral detected in viewing perimeter.';
         } else {
-            privacyDesc.textContent = '✅ Environment secure. All clear for confidential screen activity.';
+            privacyDesc.textContent = 'Environment secure. All clear for confidential screen activity.';
         }
 
         countTag.textContent = `${dets.length} items`;
@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const conf = Math.round((d.confidence || 0) * 100);
                 return `
                     <li class="detection-item-row">
-                        <span class="detection-name">🎯 ${label}</span>
+                        <span class="detection-name">${label}</span>
                         <span class="detection-conf">${conf}% conf</span>
                     </li>
                 `;
@@ -507,8 +507,8 @@ document.addEventListener('DOMContentLoaded', () => {
             recsList.innerHTML = recs.map(r => `<li>${r}</li>`).join('');
         } else {
             recsList.innerHTML = status === 'SAFE' 
-                ? '<li>✅ Physical perimeter looks clear for confidential work.</li>'
-                : '<li>🔒 Maintain vigilance against shoulder surfing.</li>';
+                ? '<li>Physical perimeter looks clear for confidential work.</li>'
+                : '<li>Maintain vigilance against shoulder surfing.</li>';
         }
     }
 });

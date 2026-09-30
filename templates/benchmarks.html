@@ -6,12 +6,11 @@
     <!-- Header with Action -->
     <div class="glass-card bench-header-card">
         <div>
-            <h2>Snapdragon® Hexagon NPU vs x86 CPU Benchmarks</h2>
-            <p class="card-sub">Measured on HP OmniBook X (Snapdragon X Elite X1E-84-100, 45 TOPS Hexagon NPU) vs Intel Core Ultra 7 155H</p>
+            <h2>Benchmarks</h2>
+            <p class="card-sub">NPU vs CPU performance comparison</p>
         </div>
         <button id="run-bench-btn" class="btn btn-primary btn-run-bench">
-            <span id="bench-icon">⚡</span>
-            <span id="bench-btn-text">Execute Benchmark Suite</span>
+            <span id="bench-btn-text">Run benchmarks</span>
         </button>
     </div>
 
@@ -32,7 +31,7 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="model-name">🎙️ Whisper-Base EN</td>
+                    <td class="model-name">Whisper-Base EN</td>
                     <td>Real-Time ASR</td>
                     <td class="bench-val col-npu" data-val="11.8 ms">11.8 ms</td>
                     <td class="bench-val col-npu" data-val="2.8 W">2.8 W</td>
@@ -42,7 +41,7 @@
                     <td class="bench-val col-saved" data-val="90%">90%</td>
                 </tr>
                 <tr>
-                    <td class="model-name">💬 Llama-3.2-3B Instruct</td>
+                    <td class="model-name">Llama-3.2-3B Instruct</td>
                     <td>Agentic Reasoning</td>
                     <td class="bench-val col-npu" data-val="28.5 ms">28.5 ms</td>
                     <td class="bench-val col-npu" data-val="3.9 W">3.9 W</td>
@@ -52,7 +51,7 @@
                     <td class="bench-val col-saved" data-val="89%">89%</td>
                 </tr>
                 <tr>
-                    <td class="model-name">📚 all-MiniLM-L6-v2</td>
+                    <td class="model-name">all-MiniLM-L6-v2</td>
                     <td>Vector Embeddings</td>
                     <td class="bench-val col-npu" data-val="6.2 ms">6.2 ms</td>
                     <td class="bench-val col-npu" data-val="2.3 W">2.3 W</td>
@@ -62,7 +61,7 @@
                     <td class="bench-val col-saved" data-val="90%">90%</td>
                 </tr>
                 <tr>
-                    <td class="model-name">👁️ YOLOv11-Nano</td>
+                    <td class="model-name">YOLOv11-Nano</td>
                     <td>Screen Guard Vision</td>
                     <td class="bench-val col-npu" data-val="4.2 ms">4.2 ms</td>
                     <td class="bench-val col-npu" data-val="2.1 W">2.1 W</td>
@@ -176,27 +175,27 @@
         <!-- Strategic Summary Metrics -->
         <div class="bench-stats-col">
             <div class="glass-card stat-card speedup-card">
-                <span class="stat-card-title">Average NPU Acceleration</span>
+                <span class="stat-card-title">Avg. speedup</span>
                 <div class="stat-big-val">7.85x</div>
-                <span class="stat-sub">Across all 4 multimodal AI workloads</span>
+                <span class="stat-sub">Across all workloads</span>
             </div>
 
             <div class="glass-card stat-card battery-card">
-                <span class="stat-card-title">HP OmniBook AI Battery Life</span>
+                <span class="stat-card-title">Battery life</span>
                 <div class="stat-big-val">22.5 hrs</div>
-                <span class="stat-sub">vs 3.2 hrs on legacy x86 (85% endurance gain)</span>
+                <span class="stat-sub">vs x86</span>
             </div>
 
             <div class="glass-card stat-card power-card">
-                <span class="stat-card-title">Average NPU Thermal Envelope</span>
+                <span class="stat-card-title">Thermal Envelope</span>
                 <div class="stat-big-val">3.8 Watts</div>
-                <span class="stat-sub">Whisper-quiet fanless operation</span>
+                <span class="stat-sub">Fanless operation</span>
             </div>
 
             <div class="glass-card stat-card cloud-card">
-                <span class="stat-card-title">Cloud Infrastructure Cost</span>
+                <span class="stat-card-title">Cost</span>
                 <div class="stat-big-val">$0 / mo</div>
-                <span class="stat-sub">vs $20-30/seat per month for cloud LLM APIs</span>
+                <span class="stat-sub">vs cloud APIs</span>
             </div>
         </div>
     </div>
@@ -404,8 +403,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     runBtn.addEventListener('click', async () => {
         runBtn.disabled = true;
-        btnText.textContent = 'Running Hexagon Neural Suite...';
-        btnIcon.textContent = '⏳';
+        btnText.textContent = 'Running benchmarks...';
+        
 
         // Clear values temporarily
         cells.forEach(c => { c.style.opacity = '0.3'; });
@@ -441,8 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(e);
         } finally {
             runBtn.disabled = false;
-            btnText.textContent = 'Re-Run Benchmark Suite';
-            btnIcon.textContent = '⚡';
+            btnText.textContent = 'Run benchmarks';
+            
         }
     });
 });

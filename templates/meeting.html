@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Meeting Scribe — OmniSnap AI{% endblock %}
+{% block title %}Meeting Scribe{% endblock %}
 
 {% block content %}
 <div class="meeting-container">
@@ -11,10 +11,10 @@
             </button>
             <div class="recording-meta">
                 <div class="recording-title-row">
-                    <span id="recording-status-badge" class="rec-badge idle">● STANDBY</span>
+                    <span id="recording-status-badge" class="rec-badge idle">Ready</span>
                     <span id="meeting-timer" class="meeting-timer">00:00:00</span>
                 </div>
-                <p class="recording-desc" id="recording-desc">Click microphone to record live audio via Hexagon Whisper ASR</p>
+                <p class="recording-desc" id="recording-desc">Click microphone to record live audio</p>
             </div>
         </div>
 
@@ -26,10 +26,10 @@
         <div class="scribe-actions-group">
             <input type="file" id="audio-file-input" accept=".wav,.mp3,.m4a,.ogg" style="display: none;">
             <button class="btn btn-glass" onclick="document.getElementById('audio-file-input').click()">
-                <span>📁 Upload Audio</span>
+                <span>Upload audio</span>
             </button>
             <button id="summarize-btn" class="btn btn-primary">
-                <span>⚡ Summarize & Action Items</span>
+                <span>Summarize</span>
             </button>
         </div>
     </div>
@@ -40,8 +40,8 @@
         <div class="glass-card feed-card">
             <div class="card-header-row">
                 <div class="card-header-left">
-                    <h3>Live Transcript</h3>
-                    <span class="card-sub">Powered by openai/whisper-base.en (W8A16)</span>
+                    <h3>Transcript</h3>
+                    
                 </div>
                 <div class="export-btn-group">
                     <button id="export-txt-btn" class="glass-btn btn-xs">TXT</button>
@@ -52,9 +52,9 @@
 
             <div id="transcription-feed" class="transcription-feed">
                 <div class="transcript-placeholder" id="transcript-empty-state">
-                    <div class="placeholder-icon">🎙️</div>
+                    <div class="placeholder-icon"></div>
                     <p>No meeting transcript recorded yet.</p>
-                    <span>Click the red microphone button above to start real-time speech-to-text or upload an audio recording.</span>
+                    <span>Click the record button to start or upload an audio recording.</span>
                 </div>
             </div>
         </div>
@@ -63,8 +63,8 @@
         <div class="glass-card actions-card">
             <div class="card-header-row">
                 <div class="card-header-left">
-                    <h3>Executive Summary & Tasks</h3>
-                    <span class="card-sub">Extracted via Llama-3.2-3B</span>
+                    <h3>Summary & Actions</h3>
+                    
                 </div>
             </div>
 
@@ -76,7 +76,7 @@
             <h4 style="margin-top: 14px; margin-bottom: 8px; font-size: 0.85rem; color: var(--accent-cyan);">Action Items</h4>
             <div id="action-items-container" class="action-items-list">
                 <div class="empty-actions" id="actions-empty-state">
-                    <p>Click <strong>"Summarize & Action Items"</strong> to automatically extract deliverables, owners, deadlines, and priorities from the transcript.</p>
+                    <p>Click <strong>"Summarize"</strong> to extract actions from the transcript.</p>
                 </div>
             </div>
         </div>
@@ -511,8 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isRecording = true;
             recordBtn.classList.add('recording');
             statusBadge.className = 'rec-badge live';
-            statusBadge.textContent = '● RECORDING LIVE';
-            recordingDesc.textContent = 'Hexagon Whisper listening... Click again to process speech.';
+            statusBadge.textContent = 'Recording';
+            recordingDesc.textContent = 'Listening... Click again to process.';
 
             elapsedSeconds = 0;
             timerEl.textContent = formatTime(elapsedSeconds);
@@ -533,8 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
         isRecording = false;
         recordBtn.classList.remove('recording');
         statusBadge.className = 'rec-badge idle';
-        statusBadge.textContent = '● PROCESSING';
-        recordingDesc.textContent = 'Transcribing with Whisper-Base EN on Hexagon NPU...';
+        statusBadge.textContent = 'Processing';
+        recordingDesc.textContent = 'Transcribing...';
 
         clearInterval(recordingTimer);
         cancelAnimationFrame(animationFrameId);
@@ -558,7 +558,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (totalLength === 0) {
-            statusBadge.textContent = '● STANDBY';
+            statusBadge.textContent = 'Ready';
             recordingDesc.textContent = 'Click microphone to record live audio.';
             return;
         }
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Encode to WAV Blob
         const wavBlob = encodeWAV(mergedPCM, 16000);
         await uploadAndTranscribe(wavBlob, 'microphone_recording.wav');
-        statusBadge.textContent = '● STANDBY';
+        statusBadge.textContent = 'Ready';
         recordingDesc.textContent = 'Click microphone to record live audio.';
     }
 
@@ -594,10 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         item.innerHTML = `
             <div class="transcript-meta">
-                <span>🔊 ${filename}</span>
+                <span>${filename}</span>
                 <span>${timestamp}</span>
             </div>
-            <div class="transcript-text"><em>⚡ Transcribing speech with Hexagon NPU...</em></div>
+            <div class="transcript-text"><em>Transcribing speech...</em></div>
         `;
         transcribeFeed.appendChild(item);
         transcribeFeed.scrollTop = transcribeFeed.scrollHeight;
@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error('Transcription error:', err);
-            item.querySelector('.transcript-text').innerHTML = `<span style="color: var(--danger);">⚠️ Transcription error. Please ensure the backend is running.</span>`;
+            item.querySelector('.transcript-text').innerHTML = `<span style="color: var(--danger);">Transcription error.</span>`;
         }
     }
 
@@ -636,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         summarizeBtn.disabled = true;
-        summarizeBtn.innerHTML = `<span>⏳ Extracting...</span>`;
+        summarizeBtn.innerHTML = `<span>Extracting...</span>`;
 
         try {
             const res = await fetch('/api/summarize', {
@@ -670,8 +670,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span class="priority-tag ${priorityClass}">${a.priority || 'Medium'}</span>
                         </div>
                         <div class="action-card-bottom">
-                            <span>👤 Owner: <strong>${a.owner || 'Unassigned'}</strong></span>
-                            <span>📅 Due: <strong>${a.deadline || 'TBD'}</strong></span>
+                            <span>Owner: <strong>${a.owner || 'Unassigned'}</strong></span>
+                            <span>Due: <strong>${a.deadline || 'TBD'}</strong></span>
                         </div>
                     `;
                     actionsContainer.appendChild(card);
@@ -693,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.showToast) window.showToast('Failed to generate summary', 'error');
         } finally {
             summarizeBtn.disabled = false;
-            summarizeBtn.innerHTML = `<span>⚡ Summarize & Action Items</span>`;
+            summarizeBtn.innerHTML = `<span>Summarize</span>`;
         }
     });
 
